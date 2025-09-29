@@ -77,16 +77,15 @@ public class ServiceController {
 
     private boolean isValidCoordinate(Coordinate pos)
     {
-        return pos != null &&
-                !Double.isNaN(pos.getLat()) && !Double.isNaN(pos.getLng()) &&
+        return  pos.getLat() != null && pos.getLng() != null &&
                 pos.getLat() >= -90 && pos.getLat() <= 90 &&
                 pos.getLng() >= -180 && pos.getLng() <= 180;
     }
-    private double distanceBetween(Coordinate pos1, Coordinate pos2)
+    private Double distanceBetween(Coordinate pos1, Coordinate pos2)
     {
-        double dx = pos1.getLng()-pos2.getLng();
-        double dy = pos1.getLat()-pos2.getLat();
-        double distance = Math.sqrt(dx*dx+dy*dy);
+        Double dx = pos1.getLng()-pos2.getLng();
+        Double dy = pos1.getLat()-pos2.getLat();
+        Double distance = Math.sqrt(dx*dx+dy*dy);
         return distance;
     }
 }

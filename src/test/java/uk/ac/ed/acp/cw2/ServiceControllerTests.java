@@ -49,6 +49,35 @@ class ServiceControllerTests {
                 .andExpect(status().isBadRequest());
     }
 
+    @Test
+    void distanceTo_nullSecondPosition_should400() throws Exception {
+        String body = """
+      {
+        "position1": { "lng": -3.192473, "lat": 55.946233 },
+        "position2": null
+      }
+      """;
+        mockMvc.perform(post("/api/v1/distanceTo")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void distanceTo_nullCoordinateField_should400() throws Exception {
+        String body = """
+      {
+        "position1": { "lng": -3.192473, "lat": 55.946233 },
+        "position2": { "lng": null, "lat": 51.5 }
+      }
+      """;
+        mockMvc.perform(post("/api/v1/distanceTo")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
+    }
+
+
     // 4. /isCloseTo
     @Test
     void isCloseToShouldReturnTrueWhenClose() throws Exception {
