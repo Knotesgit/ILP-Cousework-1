@@ -4,8 +4,11 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.*;
+import uk.ac.ed.acp.cw2.data.Coordinate;
+import uk.ac.ed.acp.cw2.data.DistanceRequest;
 import uk.ac.ed.acp.cw2.data.RuntimeEnvironment;
 
 import java.net.URL;
@@ -36,6 +39,36 @@ public class ServiceController {
 
     @GetMapping("/uid")
     public String uid() {
-        return "s2536347";
+        return "s123456";
+    }
+
+    @PostMapping("/distanceTo")
+    public ResponseEntity<Double> distanceTo(@RequestBody DistanceRequest request)
+    {
+        if(request.getPosition1()==null||request.getPosition2()==null)
+        {
+            return ResponseEntity.badRequest().body(null);
+        }
+        Coordinate pos1 = request.getPosition1();
+        Coordinate pos2 = request.getPosition2();
+
+        //Check whether the coordinate lies in a valid range.
+        if(!isValidCoordinate(pos1) || !isValidCoordinate(pos2))
+        {
+            return ResponseEntity.badRequest().body(null);
+        }
+        double dx = pos1.getLng()-pos2.getLng();
+        double dy = pos1.getLat()-pos2.getLat();
+        double distance = Math.sqrt(dx*dx+dy*dy);
+        return ResponseEntity.ok(distance);
+
+    }
+
+    private boolean isValidCoordinate(Coordinate pos)
+    {
+        return pos != null &&
+                !Double.isNaN(pos.getLat()) && !Double.isNaN(pos.getLng()) &&
+                pos.getLat() >= -90 && pos.getLat() <= 90 &&
+                pos.getLng() >= -180 && pos.getLng() <= 180;
     }
 }
