@@ -1,18 +1,14 @@
 package uk.ac.ed.acp.cw2.controller;
 
-import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.*;
 import uk.ac.ed.acp.cw2.data.Coordinate;
 import uk.ac.ed.acp.cw2.data.DistanceRequest;
-import uk.ac.ed.acp.cw2.data.RuntimeEnvironment;
 
 import java.net.URL;
-import java.time.Instant;
 
 /**
  * Controller class that handles various HTTP endpoints for the application.
@@ -39,7 +35,7 @@ public class ServiceController {
 
     @GetMapping("/uid")
     public String uid() {
-        return "s123456";
+        return "s2536347";
     }
 
     @PostMapping("/distanceTo")
@@ -58,8 +54,25 @@ public class ServiceController {
             return ResponseEntity.badRequest().body(null);
         }
 
-        return ResponseEntity.ok(disatanceBetween(pos1, pos2));
+        return ResponseEntity.ok(distanceBetween(pos1, pos2));
+    }
 
+    @PostMapping("/isCloseTo")
+    public ResponseEntity<Boolean> isCloseTo(@RequestBody DistanceRequest request)
+    {
+        if(request.getPosition1()==null||request.getPosition2()==null)
+        {
+            return ResponseEntity.badRequest().body(null);
+        }
+        Coordinate pos1 = request.getPosition1();
+        Coordinate pos2 = request.getPosition2();
+
+        if(!isValidCoordinate(pos1) || !isValidCoordinate(pos2))
+        {
+            return ResponseEntity.badRequest().body(null);
+        }
+
+        return ResponseEntity.ok((distanceBetween(pos1,pos2)<0.00015));
     }
 
     private boolean isValidCoordinate(Coordinate pos)
@@ -69,7 +82,7 @@ public class ServiceController {
                 pos.getLat() >= -90 && pos.getLat() <= 90 &&
                 pos.getLng() >= -180 && pos.getLng() <= 180;
     }
-    private double disatanceBetween(Coordinate pos1, Coordinate pos2)
+    private double distanceBetween(Coordinate pos1, Coordinate pos2)
     {
         double dx = pos1.getLng()-pos2.getLng();
         double dy = pos1.getLat()-pos2.getLat();
