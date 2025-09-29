@@ -57,10 +57,8 @@ public class ServiceController {
         {
             return ResponseEntity.badRequest().body(null);
         }
-        double dx = pos1.getLng()-pos2.getLng();
-        double dy = pos1.getLat()-pos2.getLat();
-        double distance = Math.sqrt(dx*dx+dy*dy);
-        return ResponseEntity.ok(distance);
+
+        return ResponseEntity.ok(disatanceBetween(pos1, pos2));
 
     }
 
@@ -70,5 +68,12 @@ public class ServiceController {
                 !Double.isNaN(pos.getLat()) && !Double.isNaN(pos.getLng()) &&
                 pos.getLat() >= -90 && pos.getLat() <= 90 &&
                 pos.getLng() >= -180 && pos.getLng() <= 180;
+    }
+    private double disatanceBetween(Coordinate pos1, Coordinate pos2)
+    {
+        double dx = pos1.getLng()-pos2.getLng();
+        double dy = pos1.getLat()-pos2.getLat();
+        double distance = Math.sqrt(dx*dx+dy*dy);
+        return distance;
     }
 }
