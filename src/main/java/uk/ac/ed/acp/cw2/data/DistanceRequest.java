@@ -1,5 +1,6 @@
 package uk.ac.ed.acp.cw2.data;
 
+// Request body model for endpoints that take two positions (distanceTo, isCloseTo).
 public class DistanceRequest
 {
     private Coordinate position1;
