@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uk.ac.ed.acp.cw2.data.Coordinate;
 import uk.ac.ed.acp.cw2.data.DistanceRequest;
+import uk.ac.ed.acp.cw2.data.NextPositionRequest;
 
 import java.net.URL;
 
@@ -93,25 +94,29 @@ public class ServiceController {
      * - Returns 400 if the input coordinate or angle is invalid.
      */
     @PostMapping("/nextPosition")
-    public ResponseEntity<Coordinate> nextPosition(@RequestBody Coordinate startPos, Double angle)
-    {
-        if(!isValidCoordinate(startPos) || !isValidAngle(angle))
-        {
+    public ResponseEntity<Coordinate> nextPosition(@RequestBody NextPositionRequest req) {
+        Coordinate start = (req != null) ? req.getStart() : null;
+        Double angle = (req != null) ? req.getAngle() : null;
+
+        if (!isValidCoordinate(start) || !isValidAngle(angle)) {
             return ResponseEntity.badRequest().body(null);
         }
+
         double a = normalizeTo16Dir(angle);
         double rad = Math.toRadians(a);
         double dx = STEP * Math.cos(rad);
         double dy = STEP * Math.sin(rad);
-        Coordinate nextPos = new Coordinate();
-        nextPos.setLng(startPos.getLng() + dx);
-        nextPos.setLat(startPos.getLat() + dy);
-        return ResponseEntity.ok(nextPos);
+
+        Coordinate next = new Coordinate();
+        next.setLng(start.getLng() + dx);
+        next.setLat(start.getLat() + dy);
+        return ResponseEntity.ok(next);
     }
 
     // Checks whether a coordinate is non-null and within valid lat/lng ranges
     private boolean isValidCoordinate(Coordinate pos)
     {
+        if (pos == null) return false;
         return  pos.getLat() != null && pos.getLng() != null &&
                 !Double.isNaN(pos.getLat()) && !Double.isNaN(pos.getLng()) &&
                 Double.isFinite(pos.getLat()) && Double.isFinite(pos.getLng()) &&
