@@ -9,6 +9,8 @@ import uk.ac.ed.acp.cw2.data.Coordinate;
 import uk.ac.ed.acp.cw2.data.DistanceRequest;
 import uk.ac.ed.acp.cw2.data.NextPositionRequest;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URL;
 
 /**
@@ -61,7 +63,7 @@ public class ServiceController {
             return ResponseEntity.badRequest().body(null);
         }
 
-        return ResponseEntity.ok(distanceBetween(pos1, pos2));
+        return ResponseEntity.ok(round6(distanceBetween(pos1, pos2)));
     }
 
     /**
@@ -108,8 +110,8 @@ public class ServiceController {
         double dy = STEP * Math.sin(rad);
 
         Coordinate next = new Coordinate();
-        next.setLng(start.getLng() + dx);
-        next.setLat(start.getLat() + dy);
+        next.setLng(round6(start.getLng() + dx));
+        next.setLat(round6(start.getLat() + dy));
         return ResponseEntity.ok(next);
     }
 
@@ -143,7 +145,7 @@ public class ServiceController {
     private double normalizeTo16Dir(double angle) {
         double a = angle % 360.0;
         if (a < 0) a += 360.0;
-        double k = Math.round(a / DIR_STEP);     // 0..15
+        double k = Math.round(a / DIR_STEP);     // 0..16 (warp around later if 16)
         double rounded = k * DIR_STEP;
         if (rounded >= 360.0) rounded -= 360.0;  // handle wrap-around
         return rounded;
@@ -158,4 +160,12 @@ public class ServiceController {
         Double distance = Math.sqrt(dx*dx+dy*dy);
         return distance;
     }
+
+    // Round to 6 decimal places (HALF_UP)
+    private double round6(double value) {
+        return BigDecimal.valueOf(value)
+                .setScale(6, RoundingMode.HALF_UP)
+                .doubleValue();
+    }
+
 }

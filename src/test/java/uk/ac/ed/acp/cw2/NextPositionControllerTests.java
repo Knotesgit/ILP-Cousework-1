@@ -63,8 +63,8 @@ class NextPositionControllerTests {
         JsonNode json = om.readTree(res.getResponse().getContentAsString());
         double expected[] = nextFrom(-3.192473, 55.946233, 90);
 
-        assertThat(json.get("lng").asDouble(), closeTo(expected[0], 1e-12));
-        assertThat(json.get("lat").asDouble(), closeTo(expected[1], 1e-12));
+        assertThat(json.get("lng").asDouble(), closeTo(expected[0], 1e-6));
+        assertThat(json.get("lat").asDouble(), closeTo(expected[1], 1e-6));
     }
 
     @Test
@@ -85,8 +85,8 @@ class NextPositionControllerTests {
         JsonNode json = om.readTree(res.getResponse().getContentAsString());
         double[] expected = nextFrom(-3.0, 55.0, 45.0);
 
-        assertThat(json.get("lng").asDouble(), closeTo(expected[0], 1e-12));
-        assertThat(json.get("lat").asDouble(), closeTo(expected[1], 1e-12));
+        assertThat(json.get("lng").asDouble(), closeTo(expected[0], 1e-6));
+        assertThat(json.get("lat").asDouble(), closeTo(expected[1], 1e-6));
     }
 
     @Test
@@ -107,8 +107,8 @@ class NextPositionControllerTests {
         JsonNode json = om.readTree(res.getResponse().getContentAsString());
         double[] expected = nextFrom(0.0, 0.0, 0.0);
 
-        assertThat(json.get("lng").asDouble(), closeTo(expected[0], 1e-12));
-        assertThat(json.get("lat").asDouble(), closeTo(expected[1], 1e-12));
+        assertThat(json.get("lng").asDouble(), closeTo(expected[0], 1e-6));
+        assertThat(json.get("lat").asDouble(), closeTo(expected[1], 1e-6));
     }
 
     @Test
@@ -130,8 +130,8 @@ class NextPositionControllerTests {
         JsonNode json = om.readTree(res.getResponse().getContentAsString());
         double[] expected = nextFrom(-3.192473, 55.946233, 90);
 
-        assertThat(json.get("lng").asDouble(), closeTo(expected[0], 1e-12));
-        assertThat(json.get("lat").asDouble(), closeTo(expected[1], 1e-12));
+        assertThat(json.get("lng").asDouble(), closeTo(expected[0], 1e-6));
+        assertThat(json.get("lat").asDouble(), closeTo(expected[1], 1e-6));
     }
 
     // ========== INVALID CASES (each should be 400) ==========
