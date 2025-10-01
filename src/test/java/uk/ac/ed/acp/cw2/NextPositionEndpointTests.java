@@ -28,7 +28,7 @@ class NextPositionEndpointTests {
     private static final double EPS  = 1e-12;
     private static final double DIR_STEP = 22.5;
 
-    // ----- helpers -----
+    // helpers
     private static double norm16(double angleDeg) {
         double a = angleDeg % 360.0;
         if (a < 0) a += 360.0;
@@ -44,7 +44,6 @@ class NextPositionEndpointTests {
         return new double[]{ lng + dx, lat + dy };
     }
 
-    // ========== VALID CASES ==========
     @Test
     void nextPosition_valid_returns200_andCorrectCoordinate() throws Exception {
         String body = """
@@ -134,7 +133,6 @@ class NextPositionEndpointTests {
         assertThat(json.get("lat").asDouble(), closeTo(expected[1], 1e-6));
     }
 
-    // ========== INVALID CASES (each should be 400) ==========
     @Test
     void nextPosition_missingStart_returns400() throws Exception {
         String body = """
