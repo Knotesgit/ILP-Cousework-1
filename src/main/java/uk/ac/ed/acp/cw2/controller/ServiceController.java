@@ -5,9 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import uk.ac.ed.acp.cw2.data.Coordinate;
-import uk.ac.ed.acp.cw2.data.DistanceRequest;
-import uk.ac.ed.acp.cw2.data.NextPositionRequest;
+import uk.ac.ed.acp.cw2.data.*;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -51,12 +49,9 @@ public class ServiceController {
      * - Returns 400 if either position is null or outside the valid lat/lng range.
      */
     @PostMapping("/distanceTo")
-    public ResponseEntity<Double> distanceTo(@RequestBody DistanceRequest request) {
-        if (request.getPosition1() == null || request.getPosition2() == null) {
-            return ResponseEntity.badRequest().body(null);
-        }
-        Coordinate pos1 = request.getPosition1();
-        Coordinate pos2 = request.getPosition2();
+    public ResponseEntity<Double> distanceTo(@RequestBody DistanceRequest req) {
+        Coordinate pos1 = (req != null) ? req.getPosition1() : null;
+        Coordinate pos2 = (req != null) ? req.getPosition2() : null;
 
         //Check whether the coordinate lies in a valid range.
         if (!isValidCoordinate(pos1) || !isValidCoordinate(pos2)) {
@@ -73,12 +68,9 @@ public class ServiceController {
      * - Returns 400 for null or invalid coordinates.
      */
     @PostMapping("/isCloseTo")
-    public ResponseEntity<Boolean> isCloseTo(@RequestBody DistanceRequest request) {
-        if (request.getPosition1() == null || request.getPosition2() == null) {
-            return ResponseEntity.badRequest().body(null);
-        }
-        Coordinate pos1 = request.getPosition1();
-        Coordinate pos2 = request.getPosition2();
+    public ResponseEntity<Boolean> isCloseTo(@RequestBody DistanceRequest req) {
+        Coordinate pos1 = (req != null) ? req.getPosition1() : null;
+        Coordinate pos2 = (req != null) ? req.getPosition2() : null;
 
         if (!isValidCoordinate(pos1) || !isValidCoordinate(pos2)) {
             return ResponseEntity.badRequest().body(null);
@@ -115,6 +107,22 @@ public class ServiceController {
         return ResponseEntity.ok(next);
     }
 
+    /**
+     * POST /api/v1/isInRegion
+     *
+     * */
+    @PostMapping("/isInRegion")
+    public  ResponseEntity<Boolean> isInRegion(@RequestBody RegionRequest req)
+    {
+        Coordinate pos = (req != null) ? req.getPosition() : null;
+        Region region = (req != null) ? req.getRegion() : null;
+        if(!isValidCoordinate(pos) || !isValidRegion(region))
+        {
+            return ResponseEntity.badRequest().body(null);
+        }
+        return  ResponseEntity.ok(null);
+    }
+
     // Checks whether a coordinate is non-null and within valid lat/lng ranges
     private boolean isValidCoordinate(Coordinate pos)
     {
@@ -129,6 +137,12 @@ public class ServiceController {
     // Checks whether an angle is non-null and finite.
     private boolean isValidAngle(Double angle) {
         return angle != null && !Double.isNaN(angle) && Double.isFinite(angle);
+    }
+
+    // Checks whether a region is valid
+    private boolean isValidRegion(Region region)
+    {
+        return region!= null && region.getVertices().size()>= 4;
     }
 
     /**
@@ -150,7 +164,6 @@ public class ServiceController {
         if (rounded >= 360.0) rounded -= 360.0;  // handle wrap-around
         return rounded;
     }
-
 
     // Computes Euclidean distance between two coordinates
     private Double distanceBetween(Coordinate pos1, Coordinate pos2)
