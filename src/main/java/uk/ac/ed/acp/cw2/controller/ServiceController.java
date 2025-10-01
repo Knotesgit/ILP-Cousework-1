@@ -10,6 +10,7 @@ import uk.ac.ed.acp.cw2.data.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URL;
+import java.util.List;
 
 /**
  * Controller class that handles various HTTP endpoints for the application.
@@ -23,6 +24,9 @@ public class ServiceController {
     private static final Logger logger = LoggerFactory.getLogger(ServiceController.class);
     private static final double STEP = 0.00015;
     private static final double DIR_STEP = 22.5;
+
+    private static final double COORD_TOLERANCE = 1e-12;
+
 
     @Value("${ilp.service.url}")
     public URL serviceUrl;
@@ -73,7 +77,7 @@ public class ServiceController {
         Coordinate pos2 = (req != null) ? req.getPosition2() : null;
 
         if (!isValidCoordinate(pos1) || !isValidCoordinate(pos2)) {
-            return ResponseEntity.badRequest().body(null);
+            return ResponseEntity.badRequest().body(false);
         }
 
         return ResponseEntity.ok((distanceBetween(pos1, pos2) < 0.00015));
@@ -109,8 +113,12 @@ public class ServiceController {
 
     /**
      * POST /api/v1/isInRegion
-     *
-     * */
+     * Checks whether a given position lies inside a polygonal region.
+     * - Region must have at least 4 vertices and be closed (last vertex equals first).
+     * - A point on the polygon border counts as inside.
+     * - Returns 200 with true/false on valid input.
+     * - Returns 400 if the position or region data is invalid (e.g. missing, NaN, or open polygon).
+     */
     @PostMapping("/isInRegion")
     public  ResponseEntity<Boolean> isInRegion(@RequestBody RegionRequest req)
     {
@@ -118,9 +126,9 @@ public class ServiceController {
         Region region = (req != null) ? req.getRegion() : null;
         if(!isValidCoordinate(pos) || !isValidRegion(region))
         {
-            return ResponseEntity.badRequest().body(null);
+            return ResponseEntity.badRequest().body(false);
         }
-        return  ResponseEntity.ok(null);
+        return  ResponseEntity.ok(isPointInRegion(pos,region.getVertices()));
     }
 
     // Checks whether a coordinate is non-null and within valid lat/lng ranges
@@ -142,23 +150,71 @@ public class ServiceController {
     // Checks whether a region is valid
     private boolean isValidRegion(Region region)
     {
-        return region!= null && region.getVertices().size()>= 4;
+        if (region == null) return false;
+        List<Coordinate> v = region.getVertices();
+        if (v == null || v.size() < 4) return false;
+        if (!isClosed(v)) return false;
+        for (Coordinate c : v) if (!isValidCoordinate(c)) return false;
+        return true;
     }
 
-    /**
-     * Normalizes an arbitrary angle into one of the 16 allowed directions
-     * (multiples of 22.5°).
-     * Steps:
-     * 1. Reduce the angle to the range [0, 360) using modulo.
-     * 2. Round to the nearest multiple of DIR_STEP (22.5°).
-     * 3. If the result is 360 (or slightly above due to floating-point error),
-     *    wrap it back to 0.
-     * This ensures the returned angle is always one of:
-     * {0, 22.5, 45, 67.5, ..., 337.5}.
-     */
+    // Check whether the region(polygon) is closed
+    private boolean isClosed(List<Coordinate> v) {
+        if (v.size() < 2) return false;
+        Coordinate a = v.get(0), b = v.get(v.size()-1);
+        return Math.abs(a.getLng() - b.getLng()) <= COORD_TOLERANCE &&
+                Math.abs(a.getLat() - b.getLat()) <= COORD_TOLERANCE;
+    }
+
+    // Check whether the point a is on segment pq (inclusive)
+    private boolean onSegment(Coordinate a, Coordinate p, Coordinate q) {
+        // cross product to test collinearity
+        double cross = (q.getLng()-p.getLng())*(a.getLat()-p.getLat()) - (q.getLat()-p.getLat())*(a.getLng()-p.getLng());
+        if (Math.abs(cross) > COORD_TOLERANCE) return false;
+
+        // bounding box check with tolerance
+        return Math.min(p.getLng(), q.getLng()) - COORD_TOLERANCE <= a.getLng() &&
+                a.getLng() <= Math.max(p.getLng(), q.getLng()) + COORD_TOLERANCE &&
+                Math.min(p.getLat(), q.getLat()) - COORD_TOLERANCE <= a.getLat() &&
+                a.getLat() <= Math.max(p.getLat(), q.getLat()) + COORD_TOLERANCE;
+    }
+
+    // Check whether a point is in a region
+    private boolean isPointInRegion(Coordinate p, List<Coordinate> vertices) {
+        int n = vertices.size() - 1; // polygon closed, last == first
+
+        // check boundary first
+        for (int i = 0; i < n; i++) {
+            if (onSegment(p, vertices.get(i), vertices.get(i+1))) return true;
+        }
+
+        boolean inside = false;
+
+        for (int i = 0, j = n - 1; i < n; j = i++) {
+            Coordinate vi = vertices.get(i), vj = vertices.get(j);
+
+            // ray crosses edge in y-range
+            boolean crossesY = (vi.getLat() > p.getLat()) != (vj.getLat() > p.getLat());
+            if (!crossesY) continue;
+
+            // x-coordinate of intersection
+            double xIntersect = (vj.getLng() - vi.getLng()) * (p.getLat() - vi.getLat())
+                    / (vj.getLat() - vi.getLat()) + vi.getLng();
+
+            // count only if intersection is to the right
+            if (p.getLng() < xIntersect) {
+                inside = !inside;
+            }
+        }
+        return inside;
+    }
+
+    // Normalizes an arbitrary angle into one of the 16 allowed directions
     private double normalizeTo16Dir(double angle) {
+        // reduce the angle to the range [0, 360) using modulo.
         double a = angle % 360.0;
         if (a < 0) a += 360.0;
+        // round to the nearest multiple of DIR_STEP (22.5°).
         double k = Math.round(a / DIR_STEP);     // 0..16 (warp around later if 16)
         double rounded = k * DIR_STEP;
         if (rounded >= 360.0) rounded -= 360.0;  // handle wrap-around
@@ -170,8 +226,7 @@ public class ServiceController {
     {
         Double dx = pos1.getLng()-pos2.getLng();
         Double dy = pos1.getLat()-pos2.getLat();
-        Double distance = Math.sqrt(dx*dx+dy*dy);
-        return distance;
+        return Math.sqrt(dx*dx+dy*dy);
     }
 
     // Round to 6 decimal places (HALF_UP)
