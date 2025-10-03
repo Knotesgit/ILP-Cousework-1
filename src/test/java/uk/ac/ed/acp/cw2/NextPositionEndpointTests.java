@@ -67,12 +67,12 @@ class NextPositionEndpointTests {
     }
 
     @Test
-    void nextPosition_angleGetsRoundedToNearest22_5() throws Exception {
-        // 37° should round to 45°
+    void nextPosition_validAngle_returnsExpectedPosition() throws Exception {
+        // 45° is a valid angle
         String body = """
         {
           "start": { "lng": -3.0, "lat": 55.0 },
-          "angle": 37
+          "angle": 45
         }""";
 
         MvcResult res = mockMvc.perform(post("/api/v1/nextPosition")
@@ -83,28 +83,6 @@ class NextPositionEndpointTests {
 
         JsonNode json = om.readTree(res.getResponse().getContentAsString());
         double[] expected = nextFrom(-3.0, 55.0, 45.0);
-
-        assertThat(json.get("lng").asDouble(), closeTo(expected[0], 1e-6));
-        assertThat(json.get("lat").asDouble(), closeTo(expected[1], 1e-6));
-    }
-
-    @Test
-    void nextPosition_negativeAngle_wrapsAndRounds() throws Exception {
-        // -10° → wrap to 350°, nearest is 0° (East)
-        String body = """
-        {
-          "start": { "lng": 0.0, "lat": 0.0 },
-          "angle": -10
-        }""";
-
-        MvcResult res = mockMvc.perform(post("/api/v1/nextPosition")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(body))
-                .andExpect(status().isOk())
-                .andReturn();
-
-        JsonNode json = om.readTree(res.getResponse().getContentAsString());
-        double[] expected = nextFrom(0.0, 0.0, 0.0);
 
         assertThat(json.get("lng").asDouble(), closeTo(expected[0], 1e-6));
         assertThat(json.get("lat").asDouble(), closeTo(expected[1], 1e-6));
@@ -131,6 +109,36 @@ class NextPositionEndpointTests {
 
         assertThat(json.get("lng").asDouble(), closeTo(expected[0], 1e-6));
         assertThat(json.get("lat").asDouble(), closeTo(expected[1], 1e-6));
+    }
+
+    @Test
+    void nextPosition_invalidAngle_returns400() throws Exception {
+        // 37° is not a multiple of 22.5°
+        String body = """
+        {
+          "start": { "lng": -3.0, "lat": 55.0 },
+          "angle": 37
+        }""";
+
+        mockMvc.perform(post("/api/v1/nextPosition")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void nextPosition_negativeAngle_returns400() throws Exception {
+        // Negative angle is invalid
+        String body = """
+        {
+          "start": { "lng": 0.0, "lat": 0.0 },
+          "angle": -10
+        }""";
+
+        mockMvc.perform(post("/api/v1/nextPosition")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -164,20 +172,6 @@ class NextPositionEndpointTests {
         {
           "start": { "lng": -3.192473, "lat": 55.946233 },
           "angle": "abc"
-        }""";
-
-        mockMvc.perform(post("/api/v1/nextPosition")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(body))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void nextPosition_invalidCoordinate_returns400() throws Exception {
-        String body = """
-        {
-          "start": { "lng": 181, "lat": 55.946233 },
-          "angle": 0
         }""";
 
         mockMvc.perform(post("/api/v1/nextPosition")

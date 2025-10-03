@@ -23,9 +23,9 @@ public class ServiceController {
 
     private static final Logger logger = LoggerFactory.getLogger(ServiceController.class);
     private static final double STEP = 0.00015;
-    private static final double DIR_STEP = 22.5;
 
-    private static final double COORD_TOLERANCE = 1e-12;
+    // Numerical epsilon for floating-point comparisons only.
+    private static final double EPSILON = 1e-12;
 
 
     @Value("${ilp.service.url}")
@@ -59,10 +59,10 @@ public class ServiceController {
 
         //Check whether the coordinate lies in a valid range.
         if (!isValidCoordinate(pos1) || !isValidCoordinate(pos2)) {
-            return ResponseEntity.badRequest().body(null);
+            return ResponseEntity.badRequest().build();
         }
 
-        return ResponseEntity.ok(round6(distanceBetween(pos1, pos2)));
+        return ResponseEntity.ok(distanceBetween(pos1, pos2));
     }
 
     /**
@@ -77,7 +77,7 @@ public class ServiceController {
         Coordinate pos2 = (req != null) ? req.getPosition2() : null;
 
         if (!isValidCoordinate(pos1) || !isValidCoordinate(pos2)) {
-            return ResponseEntity.badRequest().body(false);
+            return ResponseEntity.badRequest().build();
         }
 
         return ResponseEntity.ok((distanceBetween(pos1, pos2) < 0.00015));
@@ -97,17 +97,16 @@ public class ServiceController {
         Double angle = (req != null) ? req.getAngle() : null;
 
         if (!isValidCoordinate(start) || !isValidAngle(angle)) {
-            return ResponseEntity.badRequest().body(null);
+            return ResponseEntity.badRequest().build();
         }
 
-        double a = normalizeTo16Dir(angle);
-        double rad = Math.toRadians(a);
+        double rad = Math.toRadians(angle);
         double dx = STEP * Math.cos(rad);
         double dy = STEP * Math.sin(rad);
 
         Coordinate next = new Coordinate();
-        next.setLng(round6(start.getLng() + dx));
-        next.setLat(round6(start.getLat() + dy));
+        next.setLng(start.getLng() + dx);
+        next.setLat(start.getLat() + dy);
         return ResponseEntity.ok(next);
     }
 
@@ -120,13 +119,11 @@ public class ServiceController {
      * - Returns 400 if the position or region data is invalid (e.g. missing, NaN, or open polygon).
      */
     @PostMapping("/isInRegion")
-    public  ResponseEntity<Boolean> isInRegion(@RequestBody RegionRequest req)
-    {
+    public  ResponseEntity<Boolean> isInRegion(@RequestBody RegionRequest req) {
         Coordinate pos = (req != null) ? req.getPosition() : null;
         Region region = (req != null) ? req.getRegion() : null;
-        if(!isValidCoordinate(pos) || !isValidRegion(region))
-        {
-            return ResponseEntity.badRequest().body(false);
+        if(!isValidCoordinate(pos) || !isValidRegion(region)) {
+            return ResponseEntity.badRequest().build();
         }
         return  ResponseEntity.ok(isPointInRegion(pos,region.getVertices()));
     }
@@ -137,14 +134,15 @@ public class ServiceController {
         if (pos == null) return false;
         return  pos.getLat() != null && pos.getLng() != null &&
                 !Double.isNaN(pos.getLat()) && !Double.isNaN(pos.getLng()) &&
-                Double.isFinite(pos.getLat()) && Double.isFinite(pos.getLng()) &&
-                pos.getLat() >= -90 && pos.getLat() <= 90 &&
-                pos.getLng() >= -180 && pos.getLng() <= 180;
+                Double.isFinite(pos.getLat()) && Double.isFinite(pos.getLng());
     }
 
     // Checks whether an angle is non-null and finite.
     private boolean isValidAngle(Double angle) {
-        return angle != null && !Double.isNaN(angle) && Double.isFinite(angle);
+        if (angle == null || Double.isNaN(angle) || !Double.isFinite(angle)) return false;
+        if (angle < 0 || angle >= 360) return false;
+        double remainder = angle % 22.5;
+        return Math.abs(remainder) < EPSILON || Math.abs(remainder - 22.5) < EPSILON;
     }
 
     // Checks whether a region is valid
@@ -162,28 +160,28 @@ public class ServiceController {
     private boolean isClosed(List<Coordinate> v) {
         if (v.size() < 2) return false;
         Coordinate a = v.get(0), b = v.get(v.size()-1);
-        return Math.abs(a.getLng() - b.getLng()) <= COORD_TOLERANCE &&
-                Math.abs(a.getLat() - b.getLat()) <= COORD_TOLERANCE;
+        return Math.abs(a.getLng() - b.getLng()) <= EPSILON &&
+                Math.abs(a.getLat() - b.getLat()) <= EPSILON;
     }
 
     // Check whether the point a is on segment pq (inclusive)
     private boolean onSegment(Coordinate a, Coordinate p, Coordinate q) {
         // cross product to test collinearity
         double cross = (q.getLng()-p.getLng())*(a.getLat()-p.getLat()) - (q.getLat()-p.getLat())*(a.getLng()-p.getLng());
-        if (Math.abs(cross) > COORD_TOLERANCE) return false;
+        if (Math.abs(cross) > EPSILON) return false;
 
         // bounding box check with tolerance
-        return Math.min(p.getLng(), q.getLng()) - COORD_TOLERANCE <= a.getLng() &&
-                a.getLng() <= Math.max(p.getLng(), q.getLng()) + COORD_TOLERANCE &&
-                Math.min(p.getLat(), q.getLat()) - COORD_TOLERANCE <= a.getLat() &&
-                a.getLat() <= Math.max(p.getLat(), q.getLat()) + COORD_TOLERANCE;
+        return Math.min(p.getLng(), q.getLng()) - EPSILON <= a.getLng() &&
+                a.getLng() <= Math.max(p.getLng(), q.getLng()) + EPSILON &&
+                Math.min(p.getLat(), q.getLat()) - EPSILON <= a.getLat() &&
+                a.getLat() <= Math.max(p.getLat(), q.getLat()) + EPSILON;
     }
 
     // Check whether a point is in a region
     private boolean isPointInRegion(Coordinate p, List<Coordinate> vertices) {
         int n = vertices.size() - 1; // polygon closed, last == first
 
-        // check boundary first
+        // check boundary and vertices
         for (int i = 0; i < n; i++) {
             if (onSegment(p, vertices.get(i), vertices.get(i+1))) return true;
         }
@@ -209,31 +207,20 @@ public class ServiceController {
         return inside;
     }
 
-    // Normalizes an arbitrary angle into one of the 16 allowed directions
-    private double normalizeTo16Dir(double angle) {
-        // reduce the angle to the range [0, 360) using modulo.
-        double a = angle % 360.0;
-        if (a < 0) a += 360.0;
-        // round to the nearest multiple of DIR_STEP (22.5°).
-        double k = Math.round(a / DIR_STEP);     // 0..16 (warp around later if 16)
-        double rounded = k * DIR_STEP;
-        if (rounded >= 360.0) rounded -= 360.0;  // handle wrap-around
-        return rounded;
-    }
 
     // Computes Euclidean distance between two coordinates
-    private Double distanceBetween(Coordinate pos1, Coordinate pos2)
+    private double distanceBetween(Coordinate pos1, Coordinate pos2)
     {
-        Double dx = pos1.getLng()-pos2.getLng();
-        Double dy = pos1.getLat()-pos2.getLat();
+        double dx = pos1.getLng()-pos2.getLng();
+        double dy = pos1.getLat()-pos2.getLat();
         return Math.sqrt(dx*dx+dy*dy);
     }
 
-    // Round to 6 decimal places (HALF_UP)
-    private double round6(double value) {
-        return BigDecimal.valueOf(value)
-                .setScale(6, RoundingMode.HALF_UP)
-                .doubleValue();
-    }
+//    // Round to 6 decimal places (HALF_UP)
+//    private double round6(double value) {
+//        return BigDecimal.valueOf(value)
+//                .setScale(6, RoundingMode.HALF_UP)
+//                .doubleValue();
+//    }
 
 }

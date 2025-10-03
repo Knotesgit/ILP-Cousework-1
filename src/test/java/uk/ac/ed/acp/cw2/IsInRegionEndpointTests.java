@@ -66,6 +66,34 @@ public class IsInRegionEndpointTests
     }
 
     @Test
+    void vertexPointShouldReturnTrue() throws Exception {
+        String body = closedRegionJson("{ \"lng\": -3.192473, \"lat\": 55.946233 }");
+        mockMvc.perform(post("/api/v1/isInRegion")
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk())
+                .andExpect(content().string("true"));
+    }
+
+    @Test
+    void nearlyOnEdgeButOutsideShouldReturnFalse() throws Exception {
+        String body = closedRegionJson("{ \"lng\": -3.1924730001, \"lat\": 55.944 }");
+        mockMvc.perform(post("/api/v1/isInRegion")
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk())
+                .andExpect(content().string("false"));
+    }
+
+    @Test
+    void rayHitsVertexShouldNotDoubleCount() throws Exception {
+        String body = closedRegionJson("{ \"lng\": -3.19, \"lat\": 55.942617 }");
+        mockMvc.perform(post("/api/v1/isInRegion")
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk())
+                .andExpect(content().string("true"));
+    }
+
+
+    @Test
     void openPolygonShouldReturn400() throws Exception {
         String body = """
         {
