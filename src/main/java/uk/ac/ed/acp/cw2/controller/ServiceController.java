@@ -7,8 +7,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uk.ac.ed.acp.cw2.data.*;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.net.URL;
 import java.util.List;
 
@@ -79,14 +77,15 @@ public class ServiceController {
         if (!isValidCoordinate(pos1) || !isValidCoordinate(pos2)) {
             return ResponseEntity.badRequest().build();
         }
-
-        return ResponseEntity.ok((distanceBetween(pos1, pos2) < 0.00015));
+        // prevent floating error
+        boolean close = (distanceBetween(pos1, pos2) + EPSILON < 0.00015);
+        return ResponseEntity.ok(close);
     }
 
     /**
      * POST /api/v1/nextPosition
      * Calculates the next coordinate from a start position and an angle.
-     * - Angle is normalized to the nearest multiple of 22.5° (16 possible directions).
+     * - Angle must be an exact multiple of 22.5° (with tiny FP tolerance); otherwise 400.
      * - Each move advances by a fixed step of 0.00015° along that direction.
      * - Returns 200 with the new Coordinate as JSON on valid input.
      * - Returns 400 if the input coordinate or angle is invalid.
@@ -215,12 +214,5 @@ public class ServiceController {
         double dy = pos1.getLat()-pos2.getLat();
         return Math.sqrt(dx*dx+dy*dy);
     }
-
-//    // Round to 6 decimal places (HALF_UP)
-//    private double round6(double value) {
-//        return BigDecimal.valueOf(value)
-//                .setScale(6, RoundingMode.HALF_UP)
-//                .doubleValue();
-//    }
 
 }

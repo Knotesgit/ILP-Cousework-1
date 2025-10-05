@@ -25,7 +25,7 @@ class NextPositionEndpointTests {
     ObjectMapper om;
 
     private static final double STEP = 0.00015;
-    private static final double EPS  = 1e-12;
+
     private static final double DIR_STEP = 22.5;
 
     // helpers
@@ -60,10 +60,10 @@ class NextPositionEndpointTests {
                 .andReturn();
 
         JsonNode json = om.readTree(res.getResponse().getContentAsString());
-        double expected[] = nextFrom(-3.192473, 55.946233, 90);
+        double[] expected = nextFrom(-3.192473, 55.946233, 90);
 
-        assertThat(json.get("lng").asDouble(), closeTo(expected[0], 1e-6));
-        assertThat(json.get("lat").asDouble(), closeTo(expected[1], 1e-6));
+        assertThat(json.get("lng").asDouble(), closeTo(expected[0], 1e-12));
+        assertThat(json.get("lat").asDouble(), closeTo(expected[1], 1e-12));
     }
 
     @Test
@@ -84,8 +84,8 @@ class NextPositionEndpointTests {
         JsonNode json = om.readTree(res.getResponse().getContentAsString());
         double[] expected = nextFrom(-3.0, 55.0, 45.0);
 
-        assertThat(json.get("lng").asDouble(), closeTo(expected[0], 1e-6));
-        assertThat(json.get("lat").asDouble(), closeTo(expected[1], 1e-6));
+        assertThat(json.get("lng").asDouble(), closeTo(expected[0], 1e-12));
+        assertThat(json.get("lat").asDouble(), closeTo(expected[1], 1e-12));
     }
 
     @Test
@@ -107,8 +107,8 @@ class NextPositionEndpointTests {
         JsonNode json = om.readTree(res.getResponse().getContentAsString());
         double[] expected = nextFrom(-3.192473, 55.946233, 90);
 
-        assertThat(json.get("lng").asDouble(), closeTo(expected[0], 1e-6));
-        assertThat(json.get("lat").asDouble(), closeTo(expected[1], 1e-6));
+        assertThat(json.get("lng").asDouble(), closeTo(expected[0], 1e-12));
+        assertThat(json.get("lat").asDouble(), closeTo(expected[1], 1e-12));
     }
 
     @Test

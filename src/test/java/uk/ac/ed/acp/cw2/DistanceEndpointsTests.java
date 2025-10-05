@@ -39,17 +39,17 @@ class DistanceEndpointsTests {
 
         Double value = Double.parseDouble(res.getResponse().getContentAsString());
         org.hamcrest.MatcherAssert.assertThat(value,
-                org.hamcrest.number.IsCloseTo.closeTo(0.003616, 1e-6));
+                org.hamcrest.number.IsCloseTo.closeTo(0.003616, 1e-12));
     }
 
     @Test
     void distanceTo_typeError_should400() throws Exception {
         String body = """
-      {
-        "position1": { "lng": "abc", "lat": 55.946233 },
-        "position2": { "lng": -3.192473, "lat": 55.942617 }
-      }
-      """;
+          {
+            "position1": { "lng": "abc", "lat": 55.946233 },
+            "position2": { "lng": -3.192473, "lat": 55.942617 }
+          }
+          """;
 
         mockMvc.perform(post("/api/v1/distanceTo")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -60,11 +60,11 @@ class DistanceEndpointsTests {
     @Test
     void distanceTo_nullSecondPosition_should400() throws Exception {
         String body = """
-      {
-        "position1": { "lng": -3.192473, "lat": 55.946233 },
-        "position2": null
-      }
-      """;
+          {
+            "position1": { "lng": -3.192473, "lat": 55.946233 },
+            "position2": null
+          }
+          """;
         mockMvc.perform(post("/api/v1/distanceTo")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
@@ -74,17 +74,39 @@ class DistanceEndpointsTests {
     @Test
     void distanceTo_nullCoordinateField_should400() throws Exception {
         String body = """
-      {
-        "position1": { "lng": -3.192473, "lat": 55.946233 },
-        "position2": { "lng": null, "lat": 51.5 }
-      }
-      """;
+          {
+            "position1": { "lng": -3.192473, "lat": 55.946233 },
+            "position2": { "lng": null, "lat": 51.5 }
+          }
+          """;
         mockMvc.perform(post("/api/v1/distanceTo")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isBadRequest());
     }
 
+    @Test
+    void distanceTo_missingPosition1_returns400() throws Exception {
+        String body = """
+          { "position2": { "lng": -3.19, "lat": 55.94 } }
+        """;
+        mockMvc.perform(post("/api/v1/distanceTo")
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void distanceTo_missingLatInsidePosition_returns400() throws Exception {
+        String body = """
+          {
+            "position1": { "lng": -3.19, "lat": 55.94 },
+            "position2": { "lng": -3.19 }
+          }
+        """;
+        mockMvc.perform(post("/api/v1/distanceTo")
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isBadRequest());
+    }
 
     // Tests for endpoint 4: /isCloseTo
     @Test
@@ -120,7 +142,7 @@ class DistanceEndpointsTests {
     }
 
     @Test
-    void isCloseToShouldReturnTrueAtBoardCase() throws Exception {
+    void isCloseToShouldReturnTrueAtBoundaryCase() throws Exception {
         String body = """
             {
               "position1": { "lng": -3.192473, "lat": 55.0 },
@@ -136,11 +158,11 @@ class DistanceEndpointsTests {
     }
 
     @Test
-    void  isCloseToShouldReturnFalseAtBoradCase() throws Exception {
+    void  isCloseToShouldReturnFalseAtBoundaryCase() throws Exception {
         String body = """
             {
               "position1": { "lng": -3.192473, "lat": 56.0 },
-              "position2": { "lng": -3.192473, "lat": 56.000151 }
+              "position2": { "lng": -3.192473, "lat": 56.00015 }
             }
             """;
         mockMvc.perform(post("/api/v1/isCloseTo")
