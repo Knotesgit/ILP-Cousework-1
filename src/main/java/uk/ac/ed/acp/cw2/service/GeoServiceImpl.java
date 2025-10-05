@@ -1,10 +1,13 @@
 package uk.ac.ed.acp.cw2.service;
 
+import org.springframework.stereotype.Service;
 import uk.ac.ed.acp.cw2.data.Coordinate;
 import uk.ac.ed.acp.cw2.data.Region;
 
 import java.util.List;
 
+
+@Service
 public class GeoServiceImpl implements GeoService {
     private static final double STEP = 0.00015;
 
