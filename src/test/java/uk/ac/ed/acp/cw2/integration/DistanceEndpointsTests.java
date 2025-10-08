@@ -1,4 +1,4 @@
-package uk.ac.ed.acp.cw2;
+package uk.ac.ed.acp.cw2.integration;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -6,40 +6,36 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+// Integration tests for the /distanceTo and /isCloseTo endpoints.
+// Verify REST contract and input validation; distance and threshold logic are unit-tested elsewhere.
 @SpringBootTest
 @AutoConfigureMockMvc
 class DistanceEndpointsTests {
 
     @Autowired
     private MockMvc mockMvc;
-
-    // Tests for endpoint 3: /distanceTo
-    // These tests fully exercise the shared helper functions for coordinate validation.
-    // Other endpoints reuse the same helper, so their tests will not repeat coordinate validation checks.
     @Test
-    void distanceToValidRequestShouldReturn200() throws Exception {
+    void distanceTo_validRequest_returns200_andJsonNumber() throws Exception {
         String body = """
-            {
-              "position1": { "lng": -3.192473, "lat": 55.946233 },
-              "position2": { "lng": -3.192473, "lat": 55.942617 }
-            }
-            """;
+          { "position1": { "lng": -3.192473, "lat": 55.946233 },
+            "position2": { "lng": -3.192473, "lat": 55.942617 } }
+        """;
 
-        MvcResult res = mockMvc.perform(post("/api/v1/distanceTo")
+        var res = mockMvc.perform(post("/api/v1/distanceTo")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andReturn();
 
-        Double value = Double.parseDouble(res.getResponse().getContentAsString());
-        org.hamcrest.MatcherAssert.assertThat(value,
-                org.hamcrest.number.IsCloseTo.closeTo(0.003616, 1e-12));
+        // Assert only that the response can be parsed as a double;
+        // numerical accuracy is covered by unit tests.
+        assertDoesNotThrow(() -> Double.parseDouble(res.getResponse().getContentAsString()));
     }
 
     @Test

@@ -19,7 +19,9 @@ public class GeoServiceImpl implements GeoService {
         if (pos == null) return false;
         return  pos.getLat() != null && pos.getLng() != null &&
                 !Double.isNaN(pos.getLat()) && !Double.isNaN(pos.getLng()) &&
-                Double.isFinite(pos.getLat()) && Double.isFinite(pos.getLng());
+                Double.isFinite(pos.getLat()) && Double.isFinite(pos.getLng())&&
+                pos.getLng() >=-180 && pos.getLng() <= 180 &&
+                pos.getLat()>= -90 && pos.getLat()<=90;
     }
 
     // Check whether two pos are near (distance < 0.00015)
@@ -61,6 +63,7 @@ public class GeoServiceImpl implements GeoService {
     @Override
     public boolean onSegment(Coordinate a, Coordinate p, Coordinate q) {
         // cross product to test collinearity
+        // 2D cross product (z-component of pq × pa)
         double cross = (q.getLng()-p.getLng())*(a.getLat()-p.getLat()) - (q.getLat()-p.getLat())*(a.getLng()-p.getLng());
         if (Math.abs(cross) > EPSILON) return false;
 

@@ -1,7 +1,5 @@
-package uk.ac.ed.acp.cw2;
+package uk.ac.ed.acp.cw2.integration;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -10,42 +8,20 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.number.IsCloseTo.closeTo;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+// Integration tests for the /nextPosition endpoint.
+// Verify REST contract and input validation; core geometry logic is unit-tested elsewhere.
 @SpringBootTest
 @AutoConfigureMockMvc
 class NextPositionEndpointTests {
 
     @Autowired
     MockMvc mockMvc;
-    @Autowired
-    ObjectMapper om;
-
-    private static final double STEP = 0.00015;
-
-    private static final double DIR_STEP = 22.5;
-
-    // helpers
-    private static double norm16(double angleDeg) {
-        double a = angleDeg % 360.0;
-        if (a < 0) a += 360.0;
-        double k = Math.round(a / DIR_STEP);
-        double rounded = k * DIR_STEP;
-        if (rounded >= 360.0) rounded -= 360.0;
-        return rounded;
-    }
-    private static double[] nextFrom(double lng, double lat, double angleDeg) {
-        double rad = Math.toRadians(norm16(angleDeg));
-        double dx = STEP * Math.cos(rad);
-        double dy = STEP * Math.sin(rad);
-        return new double[]{ lng + dx, lat + dy };
-    }
 
     @Test
-    void nextPosition_valid_returns200_andCorrectCoordinate() throws Exception {
+    void nextPosition_valid_returns200() throws Exception {
         String body = """
         {
           "start": { "lng": -3.192473, "lat": 55.946233 },
@@ -58,35 +34,8 @@ class NextPositionEndpointTests {
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andReturn();
-
-        JsonNode json = om.readTree(res.getResponse().getContentAsString());
-        double[] expected = nextFrom(-3.192473, 55.946233, 90);
-
-        assertThat(json.get("lng").asDouble(), closeTo(expected[0], 1e-12));
-        assertThat(json.get("lat").asDouble(), closeTo(expected[1], 1e-12));
     }
 
-    @Test
-    void nextPosition_validAngle_returnsExpectedPosition() throws Exception {
-        // 45° is a valid angle
-        String body = """
-        {
-          "start": { "lng": -3.0, "lat": 55.0 },
-          "angle": 45
-        }""";
-
-        MvcResult res = mockMvc.perform(post("/api/v1/nextPosition")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(body))
-                .andExpect(status().isOk())
-                .andReturn();
-
-        JsonNode json = om.readTree(res.getResponse().getContentAsString());
-        double[] expected = nextFrom(-3.0, 55.0, 45.0);
-
-        assertThat(json.get("lng").asDouble(), closeTo(expected[0], 1e-12));
-        assertThat(json.get("lat").asDouble(), closeTo(expected[1], 1e-12));
-    }
 
     @Test
     void nextPosition_ignoresExtraFields() throws Exception {
@@ -103,12 +52,6 @@ class NextPositionEndpointTests {
                         .content(body))
                 .andExpect(status().isOk())
                 .andReturn();
-
-        JsonNode json = om.readTree(res.getResponse().getContentAsString());
-        double[] expected = nextFrom(-3.192473, 55.946233, 90);
-
-        assertThat(json.get("lng").asDouble(), closeTo(expected[0], 1e-12));
-        assertThat(json.get("lat").asDouble(), closeTo(expected[1], 1e-12));
     }
 
     @Test

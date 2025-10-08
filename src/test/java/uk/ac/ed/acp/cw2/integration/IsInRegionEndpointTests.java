@@ -1,4 +1,4 @@
-package uk.ac.ed.acp.cw2;
+package uk.ac.ed.acp.cw2.integration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -9,6 +9,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+// Integration tests for the /isInRegion endpoint.
+// Verify REST contract and polygon validation; geometric logic is unit-tested elsewhere.
 @SpringBootTest
 @AutoConfigureMockMvc
 public class IsInRegionEndpointTests
