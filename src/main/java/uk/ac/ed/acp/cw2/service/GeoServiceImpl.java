@@ -34,7 +34,7 @@ public class GeoServiceImpl implements GeoService {
     @Override
     public boolean isValidAngle(Double angle) {
         if (angle == null || Double.isNaN(angle) || !Double.isFinite(angle)) return false;
-        if (angle < 0 || angle >= 360) return false;
+        if (angle < 0 || angle > 360) return false;
         double remainder = angle % 22.5;
         return Math.abs(remainder) < EPSILON || Math.abs(remainder - 22.5) < EPSILON;
     }
