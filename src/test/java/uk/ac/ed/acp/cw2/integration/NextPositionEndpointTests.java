@@ -21,7 +21,7 @@ class NextPositionEndpointTests {
     MockMvc mockMvc;
 
     @Test
-    void nextPosition_valid_returns200() throws Exception {
+    void validReturns200() throws Exception {
         String body = """
         {
           "start": { "lng": -3.192473, "lat": 55.946233 },
@@ -38,7 +38,7 @@ class NextPositionEndpointTests {
 
 
     @Test
-    void nextPosition_ignoresExtraFields() throws Exception {
+    void ignoresExtraFieldsReturn200() throws Exception {
         // spec: extra JSON members must be ignored
         String body = """
         {
@@ -55,7 +55,7 @@ class NextPositionEndpointTests {
     }
 
     @Test
-    void nextPosition_invalidAngle_returns400() throws Exception {
+    void invalidAngleReturns400() throws Exception {
         // 37° is not a multiple of 22.5°
         String body = """
         {
@@ -70,7 +70,7 @@ class NextPositionEndpointTests {
     }
 
     @Test
-    void nextPosition_negativeAngle_returns400() throws Exception {
+    void negativeAngleReturns400() throws Exception {
         // Negative angle is invalid
         String body = """
         {
@@ -85,7 +85,7 @@ class NextPositionEndpointTests {
     }
 
     @Test
-    void nextPosition_missingStart_returns400() throws Exception {
+    void missingStartReturns400() throws Exception {
         String body = """
         { "angle": 45 }""";
 
@@ -96,7 +96,7 @@ class NextPositionEndpointTests {
     }
 
     @Test
-    void nextPosition_nullAngle_returns400() throws Exception {
+    void nullAngleReturns400() throws Exception {
         String body = """
         {
           "start": { "lng": -3.192473, "lat": 55.946233 },
@@ -110,7 +110,7 @@ class NextPositionEndpointTests {
     }
 
     @Test
-    void nextPosition_typeErrorOnAngle_returns400() throws Exception {
+    void typeErrorOnAngleReturns400() throws Exception {
         String body = """
         {
           "start": { "lng": -3.192473, "lat": 55.946233 },
@@ -124,7 +124,7 @@ class NextPositionEndpointTests {
     }
 
     @Test
-    void nextPosition_malformedJson_returns400() throws Exception {
+    void malformedJsonReturns400() throws Exception {
         String body = "{ \"start\": { \"lng\": -3.1, \"lat\": 55.9 }, \"angle\": 0 "; // missing }
 
         mockMvc.perform(post("/api/v1/nextPosition")

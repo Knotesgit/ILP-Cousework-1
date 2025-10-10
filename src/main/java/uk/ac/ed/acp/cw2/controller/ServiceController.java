@@ -9,7 +9,6 @@ import uk.ac.ed.acp.cw2.data.*;
 import uk.ac.ed.acp.cw2.service.GeoService;
 
 import java.net.URL;
-import java.util.List;
 
 /**
  * Controller class that handles various HTTP endpoints for the application.

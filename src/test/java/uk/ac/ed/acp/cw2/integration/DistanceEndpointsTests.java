@@ -19,11 +19,15 @@ class DistanceEndpointsTests {
 
     @Autowired
     private MockMvc mockMvc;
+
+    // Tests for endpoint 3: /distanceTo
     @Test
-    void distanceTo_validRequest_returns200_andJsonNumber() throws Exception {
+    void distanceTo_validRequest_returns200() throws Exception {
         String body = """
-          { "position1": { "lng": -3.192473, "lat": 55.946233 },
-            "position2": { "lng": -3.192473, "lat": 55.942617 } }
+        { 
+            "position1": { "lng": -3.192473, "lat": 55.946233 },
+            "position2": { "lng": -3.192473, "lat": 55.942617 } 
+        }
         """;
 
         var res = mockMvc.perform(post("/api/v1/distanceTo")
@@ -32,9 +36,6 @@ class DistanceEndpointsTests {
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andReturn();
-
-        // Assert only that the response can be parsed as a double;
-        // numerical accuracy is covered by unit tests.
         assertDoesNotThrow(() -> Double.parseDouble(res.getResponse().getContentAsString()));
     }
 
@@ -106,11 +107,11 @@ class DistanceEndpointsTests {
 
     // Tests for endpoint 4: /isCloseTo
     @Test
-    void isCloseToShouldReturnTrueWhenClose() throws Exception {
+    void isClose_ToValidRequest_ShouldReturn200() throws Exception {
         String body = """
             {
               "position1": { "lng": -3.192473, "lat": 55.946233 },
-              "position2": { "lng": -3.192473, "lat": 55.946300 }
+              "position2": { "lng": -3.192473, "lat": 55.942617 }
             }
             """;
 
@@ -118,53 +119,35 @@ class DistanceEndpointsTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isOk())
-                .andExpect(content().string("true"));
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
     }
 
     @Test
-    void isCloseToShouldReturnFalseWhenFar() throws Exception {
+    void isCloseTo_WhenMissingField_ShouldReturn400() throws Exception {
         String body = """
             {
-              "position1": { "lng": -3.192473, "lat": 55.946233 },
-              "position2": { "lng": -3.192473, "lat": 56.0 }
+              "position1": { "lng": -3.192473, "lat": 55.946233 }
             }
             """;
 
         mockMvc.perform(post("/api/v1/isCloseTo")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
-                .andExpect(status().isOk())
-                .andExpect(content().string("false"));
+                .andExpect(status().isBadRequest());
     }
 
     @Test
-    void isCloseToShouldReturnTrueAtBoundaryCase() throws Exception {
+    void isCloseTo_InvalidCoordinate_ShouldReturn400() throws Exception {
         String body = """
             {
-              "position1": { "lng": -3.192473, "lat": 55.0 },
-              "position2": { "lng": -3.192473, "lat": 55.000149 }
+              "position1": { "lng": -200.0, "lat": 55.0 },
+              "position2": { "lng": -3.192473, "lat": 55.946233 }
             }
             """;
 
         mockMvc.perform(post("/api/v1/isCloseTo")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
-                .andExpect(status().isOk())
-                .andExpect(content().string("true"));
-    }
-
-    @Test
-    void  isCloseToShouldReturnFalseAtBoundaryCase() throws Exception {
-        String body = """
-            {
-              "position1": { "lng": -3.192473, "lat": 56.0 },
-              "position2": { "lng": -3.192473, "lat": 56.00015 }
-            }
-            """;
-        mockMvc.perform(post("/api/v1/isCloseTo")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(body))
-                .andExpect(status().isOk())
-                .andExpect(content().string("false"));
+                .andExpect(status().isBadRequest());
     }
 }

@@ -19,14 +19,14 @@ class GetEndpointsTests {
     MockMvc mockMvc;
 
     @Test
-    void healthEndpointShouldReturnUp() throws Exception {
+    void healthEndpoint_ShouldReturnUp() throws Exception {
         mockMvc.perform(get("/actuator/health"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("UP"));
     }
 
     @Test
-    void uidEndpointShouldReturnStudentId() throws Exception {
+    void uidEndpoint_ShouldReturnStudentId() throws Exception {
         mockMvc.perform(get("/api/v1/uid"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(org.hamcrest.Matchers.startsWith("s")))

@@ -10,7 +10,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 // Integration tests for the /isInRegion endpoint.
-// Verify REST contract and polygon validation; geometric logic is unit-tested elsewhere.
+// Verify REST contract ,input validation and core geometry logic.
 @SpringBootTest
 @AutoConfigureMockMvc
 public class IsInRegionEndpointTests
