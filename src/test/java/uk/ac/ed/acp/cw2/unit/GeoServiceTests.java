@@ -3,7 +3,6 @@ package uk.ac.ed.acp.cw2.unit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import uk.ac.ed.acp.cw2.data.Coordinate;
-import uk.ac.ed.acp.cw2.data.Region;
 import uk.ac.ed.acp.cw2.service.GeoServiceImpl;
 
 import java.util.Arrays;
@@ -14,10 +13,10 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Core unit tests for GeoServiceImpl – geometry logic only.
  * Spec basis:
- * - Distances are Euclidean in degrees (planar) [ILP general spec].
- * - “Close” means strictly < 0.00015° [CW1 spec].
- * - Each horizontal move is 0.00015° with ±1e-12 tolerance; angles are multiples of 22.5° with 0=E,90=N [ILP general spec].
- * - Point-in-region includes border; region must be closed (controller rejects open regions) [CW1 spec].
+ * - Distances are Euclidean in degrees (planar).
+ * - “Close” means strictly < 0.00015°.
+ * - Each horizontal move is 0.00015° with ±1e-12 tolerance; angles are multiples of 22.5° with 0=E,90=N.
+ * - Point-in-region includes border; region must be closed (controller rejects open regions).
  */
 public class GeoServiceTests {
 
@@ -36,7 +35,6 @@ public class GeoServiceTests {
     }
 
     // distanceBetween
-
     @Test
     void distanceBetween_zeroForSamePoint_andSymmetricAndNonNegative() {
         Coordinate a = c(-3.192473, 55.946233);
@@ -59,7 +57,6 @@ public class GeoServiceTests {
     }
 
     // isValidAngle (multiples of 22.5°; allow tiny FP tolerance)
-
     @Test
     void isValidAngle_acceptsMultiplesOf22point5_andRejectsOthers() {
         assertTrue(geo.isValidAngle(0.0));
@@ -72,7 +69,6 @@ public class GeoServiceTests {
     }
 
     // nextPosition (step = 0.00015° in compass directions)
-
     @Test
     void nextPosition_movesCorrectStep_inCardinalAndDiagonalDirections() {
         Coordinate s = c(10.0, 20.0);
@@ -100,7 +96,6 @@ public class GeoServiceTests {
     }
 
     // onSegment (inclusive of endpoints; handles vertical/diagonal)
-
     @Test
     void onSegment_inclusiveEndpoints_andHandlesVerticalAndDiagonal() {
         // Vertical
@@ -115,7 +110,6 @@ public class GeoServiceTests {
     }
 
     // isPointInRegion (border inclusive; ray-casting edge cases)
-
     @Test
     void isPointInRegion_inclusiveOfBorder_andTypicalInsideOutside() {
         List<Coordinate> rect = Arrays.asList(c(0,0),
