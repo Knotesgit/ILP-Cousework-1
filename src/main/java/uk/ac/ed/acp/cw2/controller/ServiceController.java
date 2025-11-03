@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uk.ac.ed.acp.cw2.data.*;
 import uk.ac.ed.acp.cw2.service.GeoService;
+import uk.ac.ed.acp.cw2.service.ValidationService;
 
 import java.net.URL;
 
@@ -21,13 +22,13 @@ public class ServiceController {
 
     private static final Logger logger = LoggerFactory.getLogger(ServiceController.class);
     private final GeoService geo;
-
-    public ServiceController(GeoService geo) {
+    private final ValidationService validation;
+    private final String serviceUrl;
+    public ServiceController(GeoService geo, ValidationService validation, String ilpEndpoint) {
         this.geo = geo;
+        this.validation = validation;
+        this.serviceUrl = ilpEndpoint;
     }
-
-    @Value("${ilp.service.url}")
-    public URL serviceUrl;
 
     @GetMapping("/")
     public String index() {
@@ -53,7 +54,7 @@ public class ServiceController {
         Coordinate pos1 = (req != null) ? req.getPosition1() : null;
         Coordinate pos2 = (req != null) ? req.getPosition2() : null;
         //Check whether the coordinate lies in a valid range.
-        if (!geo.isValidCoordinate(pos1) || !geo.isValidCoordinate(pos2)) {
+        if (!validation.isValidCoordinate(pos1) || !validation.isValidCoordinate(pos2)) {
             return ResponseEntity.badRequest().build();
         }
         return ResponseEntity.ok(geo.distanceBetween(pos1, pos2));
@@ -69,7 +70,7 @@ public class ServiceController {
     public ResponseEntity<Boolean> isCloseTo(@RequestBody DistanceRequest req) {
         Coordinate pos1 = (req != null) ? req.getPosition1() : null;
         Coordinate pos2 = (req != null) ? req.getPosition2() : null;
-        if (!geo.isValidCoordinate(pos1) || !geo.isValidCoordinate(pos2)) {
+        if (!validation.isValidCoordinate(pos1) || !validation.isValidCoordinate(pos2)) {
             return ResponseEntity.badRequest().build();
         }
         // prevent floating error
@@ -89,7 +90,7 @@ public class ServiceController {
         Coordinate start = (req != null) ? req.getStart() : null;
         Double angle = (req != null) ? req.getAngle() : null;
 
-        if (!geo.isValidCoordinate(start) || !geo.isValidAngle(angle)) {
+        if (!validation.isValidCoordinate(start) || !validation.isValidAngle(angle)) {
             return ResponseEntity.badRequest().build();
         }
         return ResponseEntity.ok(geo.nextPosition(start,angle));
@@ -107,7 +108,7 @@ public class ServiceController {
     public  ResponseEntity<Boolean> isInRegion(@RequestBody RegionRequest req) {
         Coordinate pos = (req != null) ? req.getPosition() : null;
         Region region = (req != null) ? req.getRegion() : null;
-        if(!geo.isValidCoordinate(pos) || !geo.isValidRegion(region)) {
+        if(!validation.isValidCoordinate(pos) || !validation.isValidRegion(region)) {
             return ResponseEntity.badRequest().build();
         }
         return  ResponseEntity.ok(geo.isPointInRegion(pos,region.getVertices()));

@@ -13,50 +13,11 @@ public class GeoServiceImpl implements GeoService {
 
     // Numerical epsilon for floating-point comparisons only.
     private static final double EPSILON = 1e-12;
-    // Checks whether a coordinate is non-null and within valid lat/lng ranges
-    @Override
-    public boolean isValidCoordinate(Coordinate pos) {
-        if (pos == null) return false;
-        return  pos.getLat() != null && pos.getLng() != null &&
-                !Double.isNaN(pos.getLat()) && !Double.isNaN(pos.getLng()) &&
-                Double.isFinite(pos.getLat()) && Double.isFinite(pos.getLng())&&
-                pos.getLng() >=-180 && pos.getLng() <= 180 &&
-                pos.getLat()>= -90 && pos.getLat()<=90;
-    }
 
     // Check whether two pos are near (distance < 0.00015)
     @Override
     public boolean isNear(Coordinate pos1, Coordinate pos2) {
         return ((distanceBetween(pos1, pos2) + EPSILON) < 0.00015);
-    }
-
-    // Checks whether an angle is non-null and finite.
-    @Override
-    public boolean isValidAngle(Double angle) {
-        if (angle == null || Double.isNaN(angle) || !Double.isFinite(angle)) return false;
-        if (angle < 0 || angle > 360) return false;
-        double remainder = angle % 22.5;
-        return Math.abs(remainder) < EPSILON || Math.abs(remainder - 22.5) < EPSILON;
-    }
-
-    // Checks whether a region is valid
-    @Override
-    public boolean isValidRegion(Region region) {
-        if (region == null) return false;
-        List<Coordinate> v = region.getVertices();
-        if (v == null || v.size() < 4) return false;
-        if (!isClosed(v)) return false;
-        for (Coordinate c : v) if (!isValidCoordinate(c)) return false;
-        return true;
-    }
-
-    // Check whether the region(polygon) is closed
-    @Override
-    public boolean isClosed(List<Coordinate> v) {
-        if (v.size() < 2) return false;
-        Coordinate a = v.get(0), b = v.get(v.size()-1);
-        return Math.abs(a.getLng() - b.getLng()) <= EPSILON &&
-                Math.abs(a.getLat() - b.getLat()) <= EPSILON;
     }
 
     // Check whether the point a is on segment pq (inclusive)
@@ -104,7 +65,6 @@ public class GeoServiceImpl implements GeoService {
         }
         return inside;
     }
-
 
     // Computes Euclidean distance between two coordinates
     @Override
