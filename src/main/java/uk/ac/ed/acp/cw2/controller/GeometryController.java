@@ -2,29 +2,26 @@ package uk.ac.ed.acp.cw2.controller;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uk.ac.ed.acp.cw2.data.*;
 import uk.ac.ed.acp.cw2.service.GeoService;
 import uk.ac.ed.acp.cw2.service.ValidationService;
 
-import java.net.URL;
-
 /**
- * Controller class that handles various HTTP endpoints for the application.
- * Provides functionality for serving the index page, retrieving a static UUID,
- * and managing key-value pairs through POST requests.
+ * Controller for ILP Coursework 1 endpoints.
+ * Includes index, UID, and geometry-related operations.
+ * All use /api/v1 and return 200 or 400 as specified.
  */
 @RestController()
 @RequestMapping("/api/v1")
-public class ServiceController {
+public class GeometryController {
 
-    private static final Logger logger = LoggerFactory.getLogger(ServiceController.class);
+    private static final Logger logger = LoggerFactory.getLogger(GeometryController.class);
     private final GeoService geo;
     private final ValidationService validation;
     private final String serviceUrl;
-    public ServiceController(GeoService geo, ValidationService validation, String ilpEndpoint) {
+    public GeometryController(GeoService geo, ValidationService validation, String ilpEndpoint) {
         this.geo = geo;
         this.validation = validation;
         this.serviceUrl = ilpEndpoint;

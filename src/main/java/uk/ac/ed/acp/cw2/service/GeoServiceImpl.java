@@ -2,7 +2,6 @@ package uk.ac.ed.acp.cw2.service;
 
 import org.springframework.stereotype.Service;
 import uk.ac.ed.acp.cw2.data.Coordinate;
-import uk.ac.ed.acp.cw2.data.Region;
 
 import java.util.List;
 
