@@ -39,7 +39,7 @@ public class DroneServiceImpl implements DroneService {
                 .toList();
     }
 
-    // Returns IDs of drones whose attributes' value matches the given query condition
+    // Returns IDs of drones whose attributes' value matches the given query conditions
     @Override
     public List<Integer> queryByAttributes(List<QueryCondition> conditions){
         List<Drone> drones = ilpClient.getAllDrones();
@@ -47,6 +47,12 @@ public class DroneServiceImpl implements DroneService {
                 .filter(d -> matchesConditions(d, conditions))
                 .map(Drone::getId)
                 .toList();
+    }
+
+    // Returns IDs of drones that are available for a list of medicine dispatch record
+    @Override
+    public List<Integer> queryAvailableDrones(List<MedDispatchRec> dispatches){
+
     }
 
     // Helper method to match a drone against a specific attribute and value

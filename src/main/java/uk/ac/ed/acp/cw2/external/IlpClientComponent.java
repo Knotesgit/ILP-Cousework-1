@@ -2,7 +2,7 @@ package uk.ac.ed.acp.cw2.external;
 
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
-import uk.ac.ed.acp.cw2.data.Drone;
+import uk.ac.ed.acp.cw2.data.*;
 
 import java.util.Arrays;
 import java.util.List;
@@ -18,6 +18,12 @@ public class IlpClientComponent {
 
     public List<Drone> getAllDrones() {
         Drone[] drones = restTemplate.getForObject(serviceUrl + "/drones", Drone[].class);
-        return Arrays.asList(drones);
+        return drones == null ? List.of() : Arrays.asList(drones);
+    }
+    public List<DroneForServicePoint> getDronesForServicePoints() {
+        DroneForServicePoint[] arr =
+                restTemplate.getForObject(serviceUrl + "/drones-for-service-points",
+                        DroneForServicePoint[].class);
+        return arr == null ? List.of() : Arrays.asList(arr);
     }
 }

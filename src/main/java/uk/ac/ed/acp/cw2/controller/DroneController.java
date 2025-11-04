@@ -54,7 +54,7 @@ public class DroneController {
     }
 
     /**
-     * GET /api/v1/queryByAttribute/{attribute}/{value}
+     * GET /api/v1/queryAsPath/{attribute}/{value}
      * Returns all drone IDs whose given attribute matches the specified value.
      * - Returns 200 OK with a JSON array of matching drone IDs.
      */
@@ -63,8 +63,14 @@ public class DroneController {
         return droneService.getDronesByAttribute(attribute,value);
     }
 
+    /**
+     * POST /api/v1/query
+     * Returns all drone IDs whose attributes' value matches the given query conditions
+     * - Returns 200 OK with a JSON array of matching drone IDs.
+     */
     @PostMapping("/query")
     public List<Integer> query(@RequestBody List<QueryCondition> conditions) {
         return droneService.queryByAttributes(conditions);
     }
+
 }
