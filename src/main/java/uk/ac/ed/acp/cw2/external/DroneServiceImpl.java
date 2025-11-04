@@ -38,6 +38,17 @@ public class DroneServiceImpl implements DroneService {
                 .map(Drone::getId)
                 .toList();
     }
+
+    // Returns IDs of drones whose attributes' value matches the given query condition
+    @Override
+    public List<Integer> queryByAttributes(List<QueryCondition> conditions){
+        List<Drone> drones = ilpClient.getAllDrones();
+        return drones.stream()
+                .filter(d -> matchesConditions(d, conditions))
+                .map(Drone::getId)
+                .toList();
+    }
+
     // Helper method to match a drone against a specific attribute and value
     private boolean matches(Drone d, String attr, String val) {
         try {
@@ -57,4 +68,56 @@ public class DroneServiceImpl implements DroneService {
             return false; // invalid number input
         }
     }
+
+    // Helper method to match a drone against a list of specific conditions
+    private boolean matchesConditions(Drone d, List<QueryCondition> conditions) {
+        for (QueryCondition c : conditions) {
+            String attr = c.getAttribute();
+            String op = c.getOperator();
+            String val = c.getValue();
+
+            switch (op) {
+                case "=" -> {
+                    if (!matches(d, attr, val)) return false;
+                }
+                case "!=" -> {
+                    if (matches(d, attr, val)) return false;
+                }
+                case "<", ">" -> {
+                    if(!compareNumeric(d, attr, op, val)) return false;
+                }
+                default -> {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    // Helper method that compares numeric attributes using < or > operators
+    private boolean compareNumeric(Drone d, String attr, String op, String val) {
+        try {
+            double droneVal = switch (attr.toLowerCase()) {
+                case "id" -> d.getId();
+                case "capacity" -> d.getCapability().getCapacity();
+                case "maxmoves" -> d.getCapability().getMaxMoves();
+                case "costpermove" -> d.getCapability().getCostPerMove();
+                case "costinitial" -> d.getCapability().getCostInitial();
+                case "costfinal" -> d.getCapability().getCostFinal();
+                default -> Double.NaN; // 非数值属性
+            };
+            if (Double.isNaN(droneVal)) return false;
+
+            double queryVal = Double.parseDouble(val);
+            return switch (op) {
+                case "<" -> droneVal < queryVal;
+                case ">" -> droneVal > queryVal;
+                default -> false;
+            };
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+
 }

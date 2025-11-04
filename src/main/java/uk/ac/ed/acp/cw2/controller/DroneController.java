@@ -32,7 +32,7 @@ public class DroneController {
      * Returns all drone IDs that either support or do not support cooling.
      * - Returns 200 OK with a JSON array of matching drone IDs.
      */
-    @GetMapping("dronesWithCooling/{state}")
+    @GetMapping("/dronesWithCooling/{state}")
     public List<Integer> dronesWithCooling(@PathVariable boolean state) {
         return droneService.getDronesWithCooling(state);
     }
@@ -44,7 +44,7 @@ public class DroneController {
      * - Returns 200 OK with a Drone object if the ID exists.
      * - Returns 404 Not Found if no drone matches the given ID.
      */
-    @GetMapping("droneDetails/{id}")
+    @GetMapping("/droneDetails/{id}")
     public ResponseEntity<Drone> droneDetails(@PathVariable int id) {
         Drone drone = droneService.getDroneDetails(id);
         if (drone == null) {
@@ -58,8 +58,13 @@ public class DroneController {
      * Returns all drone IDs whose given attribute matches the specified value.
      * - Returns 200 OK with a JSON array of matching drone IDs.
      */
-    @GetMapping("queryAsPath/{attribute}/{value}")
-    public  List<Integer> queryAsPath(@PathVariable String attribute, @PathVariable String value) {
+    @GetMapping("/queryAsPath/{attribute}/{value}")
+    public List<Integer> queryAsPath(@PathVariable String attribute, @PathVariable String value) {
         return droneService.getDronesByAttribute(attribute,value);
+    }
+
+    @PostMapping("/query")
+    public List<Integer> query(@RequestBody List<QueryCondition> conditions) {
+        return droneService.queryByAttributes(conditions);
     }
 }
