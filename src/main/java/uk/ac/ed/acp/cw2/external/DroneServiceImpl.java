@@ -52,7 +52,7 @@ public class DroneServiceImpl implements DroneService {
     // Returns IDs of drones that are available for a list of medicine dispatch record
     @Override
     public List<Integer> queryAvailableDrones(List<MedDispatchRec> dispatches){
-
+        return null;
     }
 
     // Helper method to match a drone against a specific attribute and value

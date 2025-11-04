@@ -12,4 +12,13 @@ public class MedDispatchRec {
     private LocalDate date;
     private LocalTime time;
     private Requirement requirements;
+
+    @Getter
+    @Setter
+    public static class Requirement {
+        private double capacity;
+        private boolean cooling;
+        private boolean heating;
+        private Double maxCost;
+    }
 }

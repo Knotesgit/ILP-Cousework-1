@@ -2,7 +2,7 @@ package uk.ac.ed.acp.cw2.service;
 
 import org.springframework.stereotype.Service;
 import uk.ac.ed.acp.cw2.data.Coordinate;
-import uk.ac.ed.acp.cw2.data.Region;
+import uk.ac.ed.acp.cw2.data.RegionRequest;
 
 import java.util.List;
 
@@ -34,7 +34,7 @@ public class ValidationServiceImpl implements ValidationService {
 
     // Checks whether a region is valid
     @Override
-    public boolean isValidRegion(Region region) {
+    public boolean isValidRegion(RegionRequest.Region region) {
         if (region == null) return false;
         List<Coordinate> v = region.getVertices();
         if (v == null || v.size() < 4) return false;
