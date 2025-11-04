@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DroneServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">IlpTutorial1</a> &gt; <a href="index.source.html" class="el_package">uk.ac.ed.acp.cw2.external</a> &gt; <span class="el_source">DroneServiceImpl.java</span></div><h1>DroneServiceImpl.java</h1><pre class="source lang-java linenums">package uk.ac.ed.acp.cw2.external;
+
+import org.springframework.stereotype.Service;
+import uk.ac.ed.acp.cw2.data.*;
+
+import java.util.List;
+@Service
+public class DroneServiceImpl implements DroneService {
+    private final IlpClientComponent ilpClient;
+
+<span class="fc" id="L11">    public DroneServiceImpl(IlpClientComponent ilpClient) {</span>
+<span class="fc" id="L12">        this.ilpClient = ilpClient;</span>
+<span class="fc" id="L13">    }</span>
+
+    // Returns drone IDs filtered by cooling capability.
+    @Override
+    public List&lt;Integer&gt; getDronesWithCooling(boolean state){
+<span class="nc" id="L18">        List&lt;Drone&gt; drones = ilpClient.getAllDrones();</span>
+<span class="nc" id="L19">        return drones.stream()</span>
+<span class="nc bnc" id="L20" title="All 2 branches missed.">                .filter(d -&gt; d.getCapability().isCooling() == state)</span>
+<span class="nc" id="L21">                .map(Drone::getId)</span>
+<span class="nc" id="L22">                .toList();</span>
+    }
+
+    // Returns the drone matching the given ID or null if not found
+    @Override
+    public Drone getDroneDetails(int id){
+<span class="nc" id="L28">        List&lt;Drone&gt; drones = ilpClient.getAllDrones();</span>
+<span class="nc bnc" id="L29" title="All 2 branches missed.">        return drones.stream().filter(d -&gt; d.getId() == id).findFirst().orElse(null);</span>
+    }
+
+    // Returns IDs of drones whose given attribute matches the specified value
+    @Override
+    public List&lt;Integer&gt; getDronesByAttribute(String attribute, String value){
+<span class="nc" id="L35">        List&lt;Drone&gt; drones = ilpClient.getAllDrones();</span>
+<span class="nc" id="L36">        return drones.stream()</span>
+<span class="nc" id="L37">                .filter(d -&gt; matches(d, attribute, value))</span>
+<span class="nc" id="L38">                .map(Drone::getId)</span>
+<span class="nc" id="L39">                .toList();</span>
+    }
+    // Helper method to match a drone against a specific attribute and value
+    private boolean matches(Drone d, String attr, String val) {
+        try {
+<span class="nc bnc" id="L44" title="All 10 branches missed.">            return switch (attr.toLowerCase()) {</span>
+<span class="nc bnc" id="L45" title="All 2 branches missed.">                case &quot;id&quot; -&gt; d.getId() == Integer.parseInt(val);</span>
+<span class="nc" id="L46">                case &quot;name&quot; -&gt; d.getName().equalsIgnoreCase(val);</span>
+<span class="nc bnc" id="L47" title="All 2 branches missed.">                case &quot;cooling&quot; -&gt; d.getCapability().isCooling() == Boolean.parseBoolean(val);</span>
+<span class="nc bnc" id="L48" title="All 2 branches missed.">                case &quot;heating&quot; -&gt; d.getCapability().isHeating() == Boolean.parseBoolean(val);</span>
+<span class="nc bnc" id="L49" title="All 2 branches missed.">                case &quot;capacity&quot; -&gt; d.getCapability().getCapacity() == Double.parseDouble(val);</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">                case &quot;maxmoves&quot; -&gt; d.getCapability().getMaxMoves() == Integer.parseInt(val);</span>
+<span class="nc bnc" id="L51" title="All 2 branches missed.">                case &quot;costpermove&quot; -&gt; d.getCapability().getCostPerMove() == Double.parseDouble(val);</span>
+<span class="nc bnc" id="L52" title="All 2 branches missed.">                case &quot;costinitial&quot; -&gt; d.getCapability().getCostInitial() == Double.parseDouble(val);</span>
+<span class="nc bnc" id="L53" title="All 2 branches missed.">                case &quot;costfinal&quot; -&gt; d.getCapability().getCostFinal() == Double.parseDouble(val);</span>
+<span class="nc" id="L54">                default -&gt; false;</span>
+            };
+<span class="nc" id="L56">        } catch (NumberFormatException e) {</span>
+<span class="nc" id="L57">            return false; // invalid number input</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
