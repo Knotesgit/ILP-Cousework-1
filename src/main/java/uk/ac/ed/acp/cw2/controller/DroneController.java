@@ -10,8 +10,8 @@ import uk.ac.ed.acp.cw2.external.DroneService;
 import java.util.List;
 
 /**
- * REST controller providing endpoints for drone-related queries.
- * This class handles the CW2 static query: dronesWithCooling/{state}.
+ * Controller providing endpoints for drone-related queries.
+ * All use /api/v1 and return 200, 400, or 404 as specified.
  */
 @RestController()
 @RequestMapping("/api/v1")

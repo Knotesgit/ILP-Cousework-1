@@ -9,7 +9,7 @@ import uk.ac.ed.acp.cw2.service.GeoService;
 import uk.ac.ed.acp.cw2.service.ValidationService;
 
 /**
- * Controller for ILP Coursework 1 endpoints.
+ * Controller for geometry endpoints.
  * Includes index, UID, and geometry-related operations.
  * All use /api/v1 and return 200 or 400 as specified.
  */

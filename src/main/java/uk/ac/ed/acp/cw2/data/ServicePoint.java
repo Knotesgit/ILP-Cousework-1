@@ -1,18 +1,16 @@
 package uk.ac.ed.acp.cw2.data;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-// Request body model for endpoints that take two positions (distanceTo, isCloseTo).
 @Getter
 @Setter
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class DistanceRequest
-{
-    private Coordinate position1;
-    private Coordinate position2;
+public class ServicePoint {
+    private String name;
+    private int id;
+    private Coordinate location;
 
 }

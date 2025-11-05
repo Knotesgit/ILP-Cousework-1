@@ -1,6 +1,8 @@
 package uk.ac.ed.acp.cw2.data;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import java.util.List;
 
@@ -14,6 +16,8 @@ public class DroneForServicePoint {
     // Represents a drone assigned to a service point.
     @Getter
     @Setter
+    @NoArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Item {
         private int id; // droneId
         private List<Availability> availability;
@@ -22,6 +26,8 @@ public class DroneForServicePoint {
     // Represents a drone's availability time slot.
     @Getter
     @Setter
+    @NoArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Availability {
         private String dayOfWeek;
         private String from;

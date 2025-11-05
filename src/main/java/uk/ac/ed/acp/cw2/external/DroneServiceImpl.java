@@ -61,6 +61,7 @@ public class DroneServiceImpl implements DroneService {
             if (rec.getRequirements() == null) return List.of();
             if (rec.getRequirements().isCooling() && rec.getRequirements().isHeating()) return List.of();
         }
+        int n = dispatches.size();
         List<Drone> drones = ilpClient.getAllDrones();
         List<DroneForServicePoint> dfsp = ilpClient.getDronesForServicePoints();
 
@@ -68,7 +69,7 @@ public class DroneServiceImpl implements DroneService {
                 buildAvailabilityIndex(dfsp);
 
         return drones.stream()
-                .filter(d -> canHandleAll(d, availability.getOrDefault(d.getId(), Map.of()), dispatches))
+                .filter(d -> canHandleAll(d, availability.getOrDefault(d.getId(), Map.of()), dispatches, n))
                 .map(Drone::getId)
                 .sorted()
                 .toList();
@@ -172,7 +173,7 @@ public class DroneServiceImpl implements DroneService {
     // given capacity/heating/cooling, cost bound, and availability windows.
     private boolean canHandleAll(
             Drone drone, Map<DayOfWeek, List<Map.Entry<LocalTime, LocalTime>>> windowsByDow,
-            List<MedDispatchRec> dispatches) {
+            List<MedDispatchRec> dispatches, int numOfDeliveries) {
         if (drone == null || drone.getCapability() == null) return false;
         var cap = drone.getCapability();
         for (MedDispatchRec rec : dispatches) {
@@ -180,10 +181,10 @@ public class DroneServiceImpl implements DroneService {
             if (cap.getCapacity() < req.getCapacity()) return false;
             if (req.isCooling() && !cap.isCooling()) return false;
             if (req.isHeating() && !cap.isHeating()) return false;
-            // cost lower-bound check (fixed takeoff for every delivery)
+            // cost lower-bound check (fixed takeoff: initial and final cost)
             if (req.getMaxCost() != null) {
                 double fixed = cap.getCostInitial() + cap.getCostFinal();
-                if (fixed > req.getMaxCost()) return false;
+                if (fixed/numOfDeliveries > req.getMaxCost()) return false;
             }
             if (!isAvailableAt(windowsByDow, rec.getDate(), rec.getTime())) return false;
         }

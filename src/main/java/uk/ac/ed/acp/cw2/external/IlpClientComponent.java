@@ -26,4 +26,16 @@ public class IlpClientComponent {
                         DroneForServicePoint[].class);
         return arr == null ? List.of() : Arrays.asList(arr);
     }
+
+    public List<ServicePoint> getServicePoints() {
+        ServicePoint[] arr = restTemplate.getForObject(
+                serviceUrl + "/service-points", ServicePoint[].class);
+        return arr == null ? List.of() : Arrays.asList(arr);
+    }
+
+    public List<RestrictedArea> getRestrictedAreas() {
+        RestrictedArea[] arr = restTemplate.getForObject(
+                serviceUrl + "/restricted-areas", RestrictedArea[].class);
+        return arr == null ? List.of() : Arrays.asList(arr);
+    }
 }
