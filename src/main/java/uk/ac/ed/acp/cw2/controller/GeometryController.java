@@ -104,7 +104,7 @@ public class GeometryController {
     @PostMapping("/isInRegion")
     public  ResponseEntity<Boolean> isInRegion(@RequestBody RegionRequest req) {
         Coordinate pos = (req != null) ? req.getPosition() : null;
-        RegionRequest.Region region = (req != null) ? req.getRegion() : null;
+        Region region = (req != null) ? req.getRegion() : null;
         if(!validation.isValidCoordinate(pos) || !validation.isValidRegion(region)) {
             return ResponseEntity.badRequest().build();
         }

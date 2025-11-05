@@ -2,7 +2,7 @@ package uk.ac.ed.acp.cw2.service;
 
 import org.springframework.stereotype.Service;
 import uk.ac.ed.acp.cw2.data.Coordinate;
-import uk.ac.ed.acp.cw2.data.RegionRequest;
+import uk.ac.ed.acp.cw2.data.Region;
 
 import java.util.List;
 
@@ -34,7 +34,7 @@ public class ValidationServiceImpl implements ValidationService {
 
     // Checks whether a region is valid
     @Override
-    public boolean isValidRegion(RegionRequest.Region region) {
+    public boolean isValidRegion(Region region) {
         if (region == null) return false;
         List<Coordinate> v = region.getVertices();
         if (v == null || v.size() < 4) return false;
@@ -44,7 +44,7 @@ public class ValidationServiceImpl implements ValidationService {
     }
 
     // Check whether the region(polygon) is closed
-    public boolean isClosed(List<Coordinate> v) {
+    private boolean isClosed(List<Coordinate> v) {
         if (v.size() < 2) return false;
         Coordinate a = v.get(0), b = v.get(v.size()-1);
         return Math.abs(a.getLng() - b.getLng()) <= EPSILON &&

@@ -5,6 +5,8 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+
+// Represents a medical dispatch record containing delivery requirements.
 @Getter
 @Setter
 public class MedDispatchRec {
@@ -13,6 +15,7 @@ public class MedDispatchRec {
     private LocalTime time;
     private Requirement requirements;
 
+    // Represents delivery requirements for a medical dispatch.
     @Getter
     @Setter
     public static class Requirement {

@@ -73,4 +73,13 @@ public class DroneController {
         return droneService.queryByAttributes(conditions);
     }
 
+    /**
+     * POST /api/v1/queryAvailableDrones
+     * Returns all drone IDs that can fulfill the given list of medical dispatch records.
+     * - Returns 200 OK with a JSON array of available drone IDs.
+     */
+    @PostMapping("/queryAvailableDrones")
+    public List<Integer> queryAvailableDrones(@RequestBody List<MedDispatchRec> dispatches) {
+        return droneService.queryAvailableDrones(dispatches);
+    }
 }
