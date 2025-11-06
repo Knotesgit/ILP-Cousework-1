@@ -59,17 +59,18 @@ public class DroneServiceImpl implements DroneService {
         if (dispatches == null || dispatches.isEmpty()) return List.of();
         for (MedDispatchRec rec : dispatches) {
             if (rec.getRequirements() == null) return List.of();
-            if (rec.getRequirements().isCooling() && rec.getRequirements().isHeating()) return List.of();
+            if (rec.getRequirements().isCooling() && rec.getRequirements().isHeating())
+                return List.of();
         }
         int n = dispatches.size();
         List<Drone> drones = ilpClient.getAllDrones();
         List<DroneForServicePoint> dfsp = ilpClient.getDronesForServicePoints();
 
-        Map<Integer, Map<DayOfWeek, List<Map.Entry<LocalTime, LocalTime>>>> availability =
-                buildAvailabilityIndex(dfsp);
+        Map<Integer, List<AvailabilityWindow>> availability = buildAvailabilityIndex(dfsp);
 
         return drones.stream()
-                .filter(d -> canHandleAll(d, availability.getOrDefault(d.getId(), Map.of()), dispatches, n))
+                .filter(d -> canHandleAll(d, availability.getOrDefault(d.getId(),
+                        Collections.emptyList()), dispatches, n))
                 .map(Drone::getId)
                 .sorted()
                 .toList();
@@ -146,23 +147,21 @@ public class DroneServiceImpl implements DroneService {
     }
 
     // Builds an index of availability windows: droneId -> DayOfWeek -> list of [from, until] time windows.
-    private Map<Integer, Map<DayOfWeek, List<Map.Entry<LocalTime, LocalTime>>>>
-    buildAvailabilityIndex(List<DroneForServicePoint> dfspList) {
-        Map<Integer, Map<DayOfWeek, List<Map.Entry<LocalTime, LocalTime>>>> map = new HashMap<>();
+    private Map<Integer, List<AvailabilityWindow>> buildAvailabilityIndex(List<DroneForServicePoint> dfspList) {
+        Map<Integer, List<AvailabilityWindow>> map = new HashMap<>();
         if (dfspList == null) return map;
 
         for (DroneForServicePoint sp : dfspList) {
             if (sp.getDrones() == null) continue;
             for (DroneForServicePoint.Item it : sp.getDrones()) {
-                Map<DayOfWeek, List<Map.Entry<LocalTime, LocalTime>>> perDow =
-                        map.computeIfAbsent(it.getId(), k -> new EnumMap<>(DayOfWeek.class));
+                List<AvailabilityWindow> list = map.computeIfAbsent(it.getId(), k -> new ArrayList<>());
                 if (it.getAvailability() == null) continue;
+
                 for (DroneForServicePoint.Availability a : it.getAvailability()) {
                     DayOfWeek dow = DayOfWeek.valueOf(a.getDayOfWeek().toUpperCase(Locale.ROOT));
                     LocalTime from = LocalTime.parse(a.getFrom());
                     LocalTime until = LocalTime.parse(a.getUntil());
-                    perDow.computeIfAbsent(dow, k -> new ArrayList<>())
-                            .add(new AbstractMap.SimpleEntry<>(from, until));
+                    list.add(new AvailabilityWindow(dow, from, until));
                 }
             }
         }
@@ -171,37 +170,45 @@ public class DroneServiceImpl implements DroneService {
 
     // Checks if a drone can fulfill all dispatches
     // given capacity/heating/cooling, cost bound, and availability windows.
-    private boolean canHandleAll(
-            Drone drone, Map<DayOfWeek, List<Map.Entry<LocalTime, LocalTime>>> windowsByDow,
-            List<MedDispatchRec> dispatches, int numOfDeliveries) {
+    private boolean canHandleAll(Drone drone, List<AvailabilityWindow> windows,
+                                 List<MedDispatchRec> dispatches, int numOfDeliveries) {
         if (drone == null || drone.getCapability() == null) return false;
         var cap = drone.getCapability();
+
         for (MedDispatchRec rec : dispatches) {
             var req = rec.getRequirements();
             if (cap.getCapacity() < req.getCapacity()) return false;
             if (req.isCooling() && !cap.isCooling()) return false;
             if (req.isHeating() && !cap.isHeating()) return false;
-            // cost lower-bound check (fixed takeoff: initial and final cost)
+
             if (req.getMaxCost() != null) {
                 double fixed = cap.getCostInitial() + cap.getCostFinal();
-                if (fixed/numOfDeliveries > req.getMaxCost()) return false;
+                if (fixed / numOfDeliveries > req.getMaxCost()) return false;
             }
-            if (!isAvailableAt(windowsByDow, rec.getDate(), rec.getTime())) return false;
+
+            if (!isAvailableAt(windows, rec.getDate(), rec.getTime())) return false;
         }
         return true;
     }
 
     // Check if a drone has any availability window covering the given date & time
-    private boolean isAvailableAt(
-            Map<DayOfWeek, List<Map.Entry<LocalTime, LocalTime>>> windowsByDow,
-            LocalDate date, LocalTime time
-    ) {
-        var ranges = windowsByDow.getOrDefault(date.getDayOfWeek(), List.of());
-        for (Map.Entry<LocalTime, LocalTime> r : ranges) {
-            LocalTime from = r.getKey(), until = r.getValue();
-            if (!time.isBefore(from) && !time.isAfter(until)) return true; // inclusive
+    private boolean isAvailableAt(List<AvailabilityWindow> windows, LocalDate date, LocalTime time) {
+        DayOfWeek dow = date.getDayOfWeek();
+        return windows.stream()
+                .filter(w -> w.getDayOfWeek() == dow)
+                .anyMatch(w -> w.includes(time));
+    }
+
+
+    // Construct a bound box for a region
+    private BoundBox polyBox(List<Coordinate> rectClosed){
+        double minLng = Double.POSITIVE_INFINITY, minLat = Double.POSITIVE_INFINITY;
+        double maxLng = Double.NEGATIVE_INFINITY, maxLat = Double.NEGATIVE_INFINITY;
+        for (var c: rectClosed){
+            minLng = Math.min(minLng, c.getLng()); maxLng = Math.max(maxLng, c.getLng());
+            minLat = Math.min(minLat, c.getLat()); maxLat = Math.max(maxLat, c.getLat());
         }
-        return false;
+        return new BoundBox(new Coordinate(maxLng,maxLat),new Coordinate(minLng,minLat));
     }
 
 }

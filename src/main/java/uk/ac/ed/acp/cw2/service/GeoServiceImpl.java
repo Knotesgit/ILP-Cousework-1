@@ -2,6 +2,7 @@ package uk.ac.ed.acp.cw2.service;
 
 import org.springframework.stereotype.Service;
 import uk.ac.ed.acp.cw2.data.Coordinate;
+import uk.ac.ed.acp.cw2.data.BoundBox;
 
 import java.util.List;
 
@@ -85,4 +86,53 @@ public class GeoServiceImpl implements GeoService {
        next.setLat(start.getLat() + dy);
        return  next;
    }
+
+
+   @Override
+   public boolean stepBlocked(Coordinate from, Coordinate to,
+                              List<List<Coordinate>> rects, List<BoundBox> rectBoxes){
+       for (int k = 0; k < rects.size(); k++){
+           var poly = rects.get(k);
+           var box  = rectBoxes.get(k);
+
+           if (!triggerByBoxOR(from, to, box)) continue;
+
+           if (isPointInRegion(from, poly) || isPointInRegion(to, poly)) return true;
+
+           for (int i = 0; i < poly.size() - 1; i++){
+               if (segmentsIntersect(from, to, poly.get(i), poly.get(i+1))) return true;
+           }
+       }
+       return false;
+   }
+
+   // Helper to check whether a value line between higher and lower bound
+   private boolean axisHits(double val, double low, double high){
+        return (val >= low - EPSILON ) && (val <= high + EPSILON);
+    }
+    private boolean triggerByBoxOR(Coordinate a, Coordinate b, BoundBox box){
+        boolean xHit = axisHits(a.getLng(), box.getMin().getLng(), box.getMax().getLng())
+                || axisHits(b.getLng(), box.getMin().getLng(), box.getMax().getLng());
+        boolean yHit = axisHits(a.getLat(), box.getMin().getLat(), box.getMax().getLat())
+                || axisHits(b.getLat(), box.getMin().getLat(), box.getMax().getLat());
+        return xHit || yHit;
+    }
+
+    private int orient(Coordinate a, Coordinate b, Coordinate c) {
+        double cross = (b.getLng()-a.getLng())*(c.getLat()-a.getLat()) - (b.getLat()-a.getLat())*(c.getLng()-a.getLng());
+        if (cross > EPSILON) return 1;
+        if (cross < -EPSILON) return -1;
+        return 0;
+    }
+    private boolean segmentsIntersect(Coordinate p1, Coordinate p2, Coordinate q1, Coordinate q2) {
+        int o1 = orient(p1,p2,q1), o2 = orient(p1,p2,q2);
+        int o3 = orient(q1,q2,p1), o4 = orient(q1,q2,p2);
+        if (o1 != o2 && o3 != o4) return true;
+        if (o1 == 0 && onSegment(q1, p1, p2)) return true;
+        if (o2 == 0 && onSegment(q2, p1, p2)) return true;
+        if (o3 == 0 && onSegment(p1, q1, q2)) return true;
+        if (o4 == 0 && onSegment(p2, q1, q2)) return true;
+        return false;
+    }
+
 }

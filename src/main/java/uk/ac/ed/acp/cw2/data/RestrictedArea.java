@@ -13,7 +13,7 @@ import java.util.List;
 public class RestrictedArea {
     private String name;
     private Integer id;
-    private Limits limits;     // 缺省表示 no-fly (lower=0, upper=-1)
+    private Limits limits;
     private List<Coordinate> vertices;
 
     @Getter

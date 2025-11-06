@@ -10,4 +10,6 @@ public interface GeoService {
     boolean isPointInRegion(Coordinate p, List<Coordinate> vertices);
     double distanceBetween(Coordinate pos1, Coordinate pos2);
     Coordinate nextPosition(Coordinate start, double angle);
+    boolean stepBlocked(Coordinate from, Coordinate to,
+                        List<List<Coordinate>> rects, List<BoundBox> rectBoxes);
 }
