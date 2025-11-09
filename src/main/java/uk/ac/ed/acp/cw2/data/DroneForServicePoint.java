@@ -1,9 +1,11 @@
 package uk.ac.ed.acp.cw2.data;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
 import java.util.List;
 
 // Represents available drones for a specific service point.
@@ -28,6 +30,7 @@ public class DroneForServicePoint {
     @Setter
     @NoArgsConstructor
     @JsonIgnoreProperties(ignoreUnknown = true)
+    @AllArgsConstructor
     public static class Availability {
         private String dayOfWeek;
         private String from;

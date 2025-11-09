@@ -3,6 +3,7 @@ package uk.ac.ed.acp.cw2.external;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import uk.ac.ed.acp.cw2.data.*;
+import uk.ac.ed.acp.cw2.data.DroneForServicePoint;
 
 import java.util.Arrays;
 import java.util.List;

@@ -1,10 +1,10 @@
 package uk.ac.ed.acp.cw2.service;
 
 import org.springframework.stereotype.Service;
-import uk.ac.ed.acp.cw2.data.Coordinate;
-import uk.ac.ed.acp.cw2.data.BoundBox;
+import uk.ac.ed.acp.cw2.data.*;
+import uk.ac.ed.acp.cw2.utility.PathFindingHelper;
 
-import java.util.List;
+import java.util.*;
 
 
 @Service
@@ -13,6 +13,14 @@ public class GeoServiceImpl implements GeoService {
 
     // Numerical epsilon for floating-point comparisons only.
     private static final double EPSILON = 1e-12;
+
+    private final PathFindingHelper pathFindingHelper = new PathFindingHelper();
+    // 16 directions
+    private static final double[] ANGLES =
+            java.util.stream.IntStream.range(0, 16)
+                    .mapToDouble(i -> i * 22.5)
+                    .toArray();
+
 
     // Check whether two pos are near (distance < 0.00015)
     @Override
@@ -91,11 +99,15 @@ public class GeoServiceImpl implements GeoService {
    @Override
    public boolean stepBlocked(Coordinate from, Coordinate to,
                               List<List<Coordinate>> rects, List<BoundBox> rectBoxes){
+        if(rects == null || rects.isEmpty())
+            return false;
+        if(rectBoxes == null || rectBoxes.isEmpty())
+            return false;
        for (int k = 0; k < rects.size(); k++){
            var poly = rects.get(k);
            var box  = rectBoxes.get(k);
 
-           if (!triggerByBoxOR(from, to, box)) continue;
+           if (!pathFindingHelper.triggerByBoxOR(from, to, box)) continue;
 
            if (isPointInRegion(from, poly) || isPointInRegion(to, poly)) return true;
 
@@ -106,27 +118,58 @@ public class GeoServiceImpl implements GeoService {
        return false;
    }
 
-   // Helper to check whether a value line between higher and lower bound
-   private boolean axisHits(double val, double low, double high){
-        return (val >= low - EPSILON ) && (val <= high + EPSILON);
+   @Override
+   public List<Coordinate> pathBetween(
+           Coordinate start, Coordinate goal,
+           List<List<Coordinate>> rects, List<BoundBox> rectBoxes) {
+        start = PathFindingHelper.normalize(start);
+        goal  = PathFindingHelper.normalize(goal);
+        // Early termination if start of end at restricted area
+        if (rects != null && !rects.isEmpty()){
+            for(List<Coordinate> poly: rects){
+            if(isPointInRegion(start, poly) || isPointInRegion(goal, poly))
+                return List.of();
+            }
+        }
+        Map<String, Integer> bestG = new HashMap<>();
+        PriorityQueue<Node> open = new PriorityQueue<>(Comparator.comparingInt(Node::getF));
+        Node s = new Node(start, 0, heuristic(start, goal), null);
+        open.add(s);
+        bestG.put(PathFindingHelper.keyOf(start), 0);
+        while (!open.isEmpty()) {
+            Node cur = open.poll();
+
+            if (isNear(cur.getP(), goal)) {
+                return pathFindingHelper.reconstruct(cur);
+            }
+            for (double ang : ANGLES) {
+                Coordinate rawNext = nextPosition(cur.getP(), ang);
+                Coordinate nxt = PathFindingHelper.normalize(rawNext);
+                if (stepBlocked(cur.getP(), nxt, rects, rectBoxes)) continue;
+                int ng = cur.getG() + 1;
+                String k = PathFindingHelper.keyOf(nxt);
+                Integer old = bestG.get(k);
+                if (old != null && old <= ng) continue;
+                int h = heuristic(nxt, goal);
+                Node nn = new Node(nxt, ng, ng + h, cur);
+                bestG.put(k, ng);
+                open.add(nn);
+            }
+        }
+        return List.of();
     }
+
+
     private boolean triggerByBoxOR(Coordinate a, Coordinate b, BoundBox box){
-        boolean xHit = axisHits(a.getLng(), box.getMin().getLng(), box.getMax().getLng())
-                || axisHits(b.getLng(), box.getMin().getLng(), box.getMax().getLng());
-        boolean yHit = axisHits(a.getLat(), box.getMin().getLat(), box.getMax().getLat())
-                || axisHits(b.getLat(), box.getMin().getLat(), box.getMax().getLat());
-        return xHit || yHit;
+        return pathFindingHelper.triggerByBoxOR(a, b, box);
     }
 
     private int orient(Coordinate a, Coordinate b, Coordinate c) {
-        double cross = (b.getLng()-a.getLng())*(c.getLat()-a.getLat()) - (b.getLat()-a.getLat())*(c.getLng()-a.getLng());
-        if (cross > EPSILON) return 1;
-        if (cross < -EPSILON) return -1;
-        return 0;
+        return pathFindingHelper.orient(a, b, c);
     }
     private boolean segmentsIntersect(Coordinate p1, Coordinate p2, Coordinate q1, Coordinate q2) {
-        int o1 = orient(p1,p2,q1), o2 = orient(p1,p2,q2);
-        int o3 = orient(q1,q2,p1), o4 = orient(q1,q2,p2);
+        int o1 = pathFindingHelper.orient(p1, p2, q1), o2 = pathFindingHelper.orient(p1, p2, q2);
+        int o3 = pathFindingHelper.orient(q1, q2, p1), o4 = pathFindingHelper.orient(q1, q2, p2);
         if (o1 != o2 && o3 != o4) return true;
         if (o1 == 0 && onSegment(q1, p1, p2)) return true;
         if (o2 == 0 && onSegment(q2, p1, p2)) return true;
@@ -135,4 +178,13 @@ public class GeoServiceImpl implements GeoService {
         return false;
     }
 
+    //
+    private int heuristic(Coordinate a, Coordinate b){
+        double d = distanceBetween(a,b);
+        return (int) Math.floor(d / STEP);
+    }
+
+    private List<Coordinate> reconstruct(Node t){
+        return pathFindingHelper.reconstruct(t);
+    }
 }

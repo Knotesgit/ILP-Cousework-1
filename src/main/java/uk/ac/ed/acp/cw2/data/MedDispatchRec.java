@@ -14,10 +14,12 @@ import java.time.LocalTime;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class MedDispatchRec {
-    private int id;
+    private Integer id;
     private LocalDate date;
     private LocalTime time;
     private Requirement requirements;
+    private Coordinate delivery;
+
 
     // Represents delivery requirements for a medical dispatch.
     @Getter
@@ -25,9 +27,9 @@ public class MedDispatchRec {
     @NoArgsConstructor
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Requirement {
-        private double capacity;
-        private boolean cooling;
-        private boolean heating;
-        private Double maxCost;
+        private Double capacity;
+        private boolean cooling; // optional
+        private boolean heating; // optional
+        private Double maxCost;  // optional
     }
 }

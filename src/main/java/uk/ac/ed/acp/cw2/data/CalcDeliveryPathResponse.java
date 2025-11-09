@@ -31,7 +31,7 @@ public class CalcDeliveryPathResponse {
     @NoArgsConstructor
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class DeliverySegment {
-        private int deliveryId;
+        private Integer deliveryId;
         private List<Coordinate> flightPath;
     }
 }

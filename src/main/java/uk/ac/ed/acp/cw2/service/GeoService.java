@@ -12,4 +12,7 @@ public interface GeoService {
     Coordinate nextPosition(Coordinate start, double angle);
     boolean stepBlocked(Coordinate from, Coordinate to,
                         List<List<Coordinate>> rects, List<BoundBox> rectBoxes);
+    List<Coordinate> pathBetween(
+            Coordinate start, Coordinate goal,
+            List<List<Coordinate>> rects, List<BoundBox> rectBoxes);
 }

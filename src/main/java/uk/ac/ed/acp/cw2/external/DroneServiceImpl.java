@@ -2,18 +2,26 @@ package uk.ac.ed.acp.cw2.external;
 
 import org.springframework.stereotype.Service;
 import uk.ac.ed.acp.cw2.data.*;
+import uk.ac.ed.acp.cw2.data.DroneForServicePoint;
+import uk.ac.ed.acp.cw2.utility.DeliveryPlanHelper;
+import uk.ac.ed.acp.cw2.utility.QueryDroneHelper;
+import uk.ac.ed.acp.cw2.service.GeoService;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class DroneServiceImpl implements DroneService {
     private final IlpClientComponent ilpClient;
+    private final GeoService geo;
+    private final QueryDroneHelper QueryDroneHelper = new QueryDroneHelper();
+    private final DeliveryPlanHelper deliveryPlanHelper = new DeliveryPlanHelper();
 
-    public DroneServiceImpl(IlpClientComponent ilpClient) {
+    public DroneServiceImpl(IlpClientComponent ilpClient,GeoService geo) {
         this.ilpClient = ilpClient;
+        this.geo = geo;
     }
 
     // Returns drone IDs filtered by cooling capability.
@@ -38,7 +46,7 @@ public class DroneServiceImpl implements DroneService {
     public List<Integer> getDronesByAttribute(String attribute, String value){
         List<Drone> drones = ilpClient.getAllDrones();
         return drones.stream()
-                .filter(d -> matches(d, attribute, value))
+                .filter(d -> QueryDroneHelper.matches(d, attribute, value))
                 .map(Drone::getId)
                 .toList();
     }
@@ -48,7 +56,7 @@ public class DroneServiceImpl implements DroneService {
     public List<Integer> queryByAttributes(List<QueryCondition> conditions){
         List<Drone> drones = ilpClient.getAllDrones();
         return drones.stream()
-                .filter(d -> matchesConditions(d, conditions))
+                .filter(d -> QueryDroneHelper.matchesConditions(d, conditions))
                 .map(Drone::getId)
                 .toList();
     }
@@ -66,149 +74,286 @@ public class DroneServiceImpl implements DroneService {
         List<Drone> drones = ilpClient.getAllDrones();
         List<DroneForServicePoint> dfsp = ilpClient.getDronesForServicePoints();
 
-        Map<Integer, List<AvailabilityWindow>> availability = buildAvailabilityIndex(dfsp);
+        Map<Integer, List<DroneForServicePoint.Availability>> availability = QueryDroneHelper.buildAvailabilityIndex(dfsp);
 
         return drones.stream()
-                .filter(d -> canHandleAll(d, availability.getOrDefault(d.getId(),
+                .filter(d -> QueryDroneHelper.canHandleAll(d, availability.getOrDefault(d.getId(),
                         Collections.emptyList()), dispatches, n))
                 .map(Drone::getId)
                 .sorted()
                 .toList();
     }
 
-    // Helper method to match a drone against a specific attribute and value
-    private boolean matches(Drone d, String attr, String val) {
-        try {
-            return switch (attr.toLowerCase()) {
-                case "id" -> d.getId() == Integer.parseInt(val);
-                case "name" -> d.getName().equalsIgnoreCase(val);
-                case "cooling" -> d.getCapability().isCooling() == Boolean.parseBoolean(val);
-                case "heating" -> d.getCapability().isHeating() == Boolean.parseBoolean(val);
-                case "capacity" -> d.getCapability().getCapacity() == Double.parseDouble(val);
-                case "maxmoves" -> d.getCapability().getMaxMoves() == Integer.parseInt(val);
-                case "costpermove" -> d.getCapability().getCostPerMove() == Double.parseDouble(val);
-                case "costinitial" -> d.getCapability().getCostInitial() == Double.parseDouble(val);
-                case "costfinal" -> d.getCapability().getCostFinal() == Double.parseDouble(val);
-                default -> false;
-            };
-        } catch (NumberFormatException e) {
-            return false; // invalid number input
+
+    @Override
+    public CalcDeliveryPathResponse calcDeliveryPath(List<MedDispatchRec> recs) {
+        // Basic record verification
+        if (recs == null || recs.isEmpty())
+            return deliveryPlanHelper.emptyResponse();
+        for (MedDispatchRec rec : recs){
+            if (rec.getId() == null)
+                return deliveryPlanHelper.emptyResponse();
+            if (rec.getRequirements() == null)
+                return deliveryPlanHelper.emptyResponse();
+            if(rec.getDelivery() == null)
+                return deliveryPlanHelper.emptyResponse();
+            if(rec.getDate() == null && rec.getTime() !=null)
+                return deliveryPlanHelper.emptyResponse();
+            var req = rec.getRequirements();
+            if (req.isCooling() && req.isHeating())
+                return deliveryPlanHelper.emptyResponse();
+            if (req.getCapacity() == null)
+                return deliveryPlanHelper.emptyResponse();
+
         }
-    }
 
-    // Helper method to match a drone against a list of specific conditions
-    private boolean matchesConditions(Drone d, List<QueryCondition> conditions) {
-        for (QueryCondition c : conditions) {
-            String attr = c.getAttribute();
-            String op = c.getOperator();
-            String val = c.getValue();
+        List<Drone> drones = ilpClient.getAllDrones();
+        List<ServicePoint> servicePts = ilpClient.getServicePoints();
+        List<RestrictedArea> areas = ilpClient.getRestrictedAreas();
+        List<DroneForServicePoint> dfsp = ilpClient.getDronesForServicePoints();
+        List<List<Coordinate>> restrictedPolys = deliveryPlanHelper.extractPolygons(areas);
+        List<BoundBox> BBoxes = deliveryPlanHelper.extractBBoxes(areas);
+        // Map drone by drone id
+        Map<Integer, Drone> droneById = drones.stream().
+                collect(Collectors.toMap(Drone::getId, d -> d));
+        // Map serviceId to DroneForServicePoint
+        Map<Integer, DroneForServicePoint> spMapDrone = dfsp.stream()
+                .collect(Collectors.toMap
+                        (DroneForServicePoint::getServicePointId, e -> e));
 
-            switch (op) {
-                case "=" -> {
-                    if (!matches(d, attr, val)) return false;
-                }
-                case "!=" -> {
-                    if (matches(d, attr, val)) return false;
-                }
-                case "<", ">" -> {
-                    if(!compareNumeric(d, attr, op, val)) return false;
-                }
-                default -> {
-                    return false;
+        List<MedDispatchRec> fixed = new ArrayList<>();
+        List<MedDispatchRec> dateOnly = new ArrayList<>();
+        List<MedDispatchRec> anytime = new ArrayList<>();
+        for (MedDispatchRec r : recs) {
+            if (r.getDate() != null && r.getTime() != null) fixed.add(r);
+            else if (r.getDate() != null) dateOnly.add(r);
+            else anytime.add(r);
+        }
+        Map<LocalDate, List<MedDispatchRec>> fixedByDate =
+                fixed.stream().collect(Collectors.groupingBy(MedDispatchRec::getDate));
+        Map<LocalDate, List<MedDispatchRec>> dateOnlyByDate =
+                dateOnly.stream().collect(Collectors.groupingBy(MedDispatchRec::getDate));
+
+        List<LocalDate> orderedDays = Stream.concat(
+                        fixedByDate.keySet().stream(),
+                        dateOnlyByDate.keySet().stream())
+                .distinct().sorted().toList();
+
+        // Group the dispatches by date and sorted in time sequence(compare id if same time)
+
+        List<FlightBuilder> activeFlights = new ArrayList<>();
+        List<FlightBuilder> finishedFlights = new ArrayList<>();
+
+        for (LocalDate day : orderedDays) {
+            List<MedDispatchRec> today = new ArrayList<>();
+            var fx = new ArrayList<>(fixedByDate.getOrDefault(day, List.of()));
+            fx.sort(Comparator.comparing(MedDispatchRec::getTime).thenComparing(MedDispatchRec::getId));
+            today.addAll(fx);
+            today.addAll(dateOnlyByDate.getOrDefault(day, List.of()));
+            for (MedDispatchRec r : today) {
+                if (!tryAssignOrStartFlight(servicePts, spMapDrone, droneById,
+                        restrictedPolys, BBoxes, r, day, activeFlights, finishedFlights)) {
+                    return deliveryPlanHelper.emptyResponse();
                 }
             }
+
+            for (Iterator<MedDispatchRec> it = anytime.iterator(); it.hasNext(); ) {
+                MedDispatchRec r = it.next();
+                boolean ok = tryAssignOrStartFlight(servicePts, spMapDrone, droneById,
+                        restrictedPolys, BBoxes, r, day, activeFlights, finishedFlights);
+                if (ok) it.remove();
+            }
         }
-        return true;
+        if(!activeFlights.isEmpty()){
+            for(FlightBuilder fb : activeFlights)
+                closeFlight(fb,finishedFlights,restrictedPolys,BBoxes);
+        }
+        return deliveryPlanHelper.buildResponse(finishedFlights);
     }
 
-    // Helper method that compares numeric attributes using < or > operators
-    private boolean compareNumeric(Drone d, String attr, String op, String val) {
-        try {
-            double droneVal = switch (attr.toLowerCase()) {
-                case "id" -> d.getId();
-                case "capacity" -> d.getCapability().getCapacity();
-                case "maxmoves" -> d.getCapability().getMaxMoves();
-                case "costpermove" -> d.getCapability().getCostPerMove();
-                case "costinitial" -> d.getCapability().getCostInitial();
-                case "costfinal" -> d.getCapability().getCostFinal();
-                default -> Double.NaN; // 非数值属性
-            };
-            if (Double.isNaN(droneVal)) return false;
+    private boolean tryAssignOrStartFlight(
+            List<ServicePoint> servicePts,
+            Map<Integer, DroneForServicePoint> spMapDrone,
+            Map<Integer, Drone> droneById,
+            List<List<Coordinate>> restrictedPolys,
+            List<BoundBox> boxes,
+            MedDispatchRec r,
+            LocalDate day,
+            List<FlightBuilder> active,
+            List<FlightBuilder> finished) {
 
-            double queryVal = Double.parseDouble(val);
-            return switch (op) {
-                case "<" -> droneVal < queryVal;
-                case ">" -> droneVal > queryVal;
-                default -> false;
-            };
-        } catch (NumberFormatException e) {
+        if (!active.isEmpty()) {
+            boolean merged = tryMergeFlight(r,active, finished,
+                    droneById,spMapDrone, restrictedPolys, boxes, day);
+            if (merged) return true;
+        }
+
+        FlightBuilder fb = openNewFlight(servicePts, droneById, spMapDrone, r,
+                restrictedPolys, boxes, day);
+        if (fb != null) {
+            active.add(fb);
+            return true;
+        }
+        return false;
+    }
+
+    private FlightBuilder openNewFlight(
+            List<ServicePoint> spCandidates,
+            Map<Integer, Drone> droneById,
+            Map<Integer, DroneForServicePoint> spMapDrone,
+            MedDispatchRec rec, List<List<Coordinate>> restrictedPolys,
+            List<BoundBox> boxes,LocalDate day){
+        Coordinate target = rec.getDelivery();
+        if (target == null) return null;
+        spCandidates.sort(Comparator.comparingDouble(
+                sp -> geo.distanceBetween(sp.getLocation(), target)));
+                for (ServicePoint sp:spCandidates){
+                    List<Coordinate> forward = geo.pathBetween(
+                            sp.getLocation(), target, restrictedPolys, boxes);
+                    if(forward.isEmpty()) continue;
+                    int fSteps = forward.size() - 1;
+                    List<Coordinate> forwardWithHover = new ArrayList<>(forward);
+                    forwardWithHover.add(forward.getLast());
+                    // Same path to return if only one delivery
+                    // +1 for hover
+                    int neededStepsNow = fSteps + fSteps + 1;
+
+                    List<Integer> availableDroneIds = deliveryPlanHelper.
+                            feasibleDroneIdsAtSP(spMapDrone.get(sp.getId()),
+                                    droneById, rec, day);
+                    if(availableDroneIds.isEmpty())
+                        continue;
+                    int bestDroneId = -1;
+                    double bestEstCost = (rec.getRequirements().getMaxCost()==null) ?
+                            Double.MAX_VALUE : rec.getRequirements().getMaxCost();
+                    for(Integer id : availableDroneIds){
+                        Drone d = droneById.get(id);
+                        var cap = d.getCapability();
+                        if(neededStepsNow > cap.getMaxMoves()) continue;
+                        // estimation of cost and steps
+                        double est = cap.getCostInitial()+cap.getCostFinal()
+                                +cap.getCostPerMove()*neededStepsNow;
+                        if(est < bestEstCost){
+                            bestEstCost = est;
+                            bestDroneId = d.getId();
+                        }
+                    }
+                    if(bestDroneId < 0) continue;
+
+                    Drone d = droneById.get(bestDroneId);
+                    var cap =  d.getCapability();
+                    FlightBuilder fb = new FlightBuilder(
+                            d.getId(), sp,
+                            cap.getCapacity(),
+                            cap.getMaxMoves(),
+                            cap.getCostPerMove(),
+                            cap.getCostInitial(), cap.getCostFinal(),rec);
+                    //fb.setReservedReturnSteps(fSteps);
+                    fb.addSegment(
+                            rec.getId(),
+                            forwardWithHover,
+                            (fSteps+1),
+                            rec.getRequirements().getCapacity(),
+                            rec.getRequirements().getMaxCost(),
+                            rec.getRequirements().isCooling(),
+                            rec.getRequirements().isHeating()
+                    );
+                    return fb;
+                }
+                return null;
+    }
+    private boolean tryMergeFlight(MedDispatchRec rec,
+                                   List<FlightBuilder> actives,List<FlightBuilder> finished,
+                                   Map<Integer, Drone> droneById,
+                                   Map<Integer, DroneForServicePoint> spMapDrone,
+                                   List<List<Coordinate>> restrictedPolys,
+                                   List<BoundBox> boxes,
+                                   LocalDate day) {
+
+        if(actives == null || actives.isEmpty()){
             return false;
         }
-    }
-
-    // Builds an index of availability windows: droneId -> DayOfWeek -> list of [from, until] time windows.
-    private Map<Integer, List<AvailabilityWindow>> buildAvailabilityIndex(List<DroneForServicePoint> dfspList) {
-        Map<Integer, List<AvailabilityWindow>> map = new HashMap<>();
-        if (dfspList == null) return map;
-
-        for (DroneForServicePoint sp : dfspList) {
-            if (sp.getDrones() == null) continue;
-            for (DroneForServicePoint.Item it : sp.getDrones()) {
-                List<AvailabilityWindow> list = map.computeIfAbsent(it.getId(), k -> new ArrayList<>());
-                if (it.getAvailability() == null) continue;
-
-                for (DroneForServicePoint.Availability a : it.getAvailability()) {
-                    DayOfWeek dow = DayOfWeek.valueOf(a.getDayOfWeek().toUpperCase(Locale.ROOT));
-                    LocalTime from = LocalTime.parse(a.getFrom());
-                    LocalTime until = LocalTime.parse(a.getUntil());
-                    list.add(new AvailabilityWindow(dow, from, until));
-                }
+        ListIterator<FlightBuilder> it = actives.listIterator();
+        while (it.hasNext()) {
+            // Time availability Check
+            FlightBuilder fb = it.next();
+            LocalDate fd = fb.getFlightDate();
+            if (fd != null && !fd.equals(day)) {
+                it.remove();
+                closeFlight(fb, finished, restrictedPolys, boxes);
+                continue;
             }
-        }
-        return map;
-    }
+            var droneItem = deliveryPlanHelper.findDroneItem(
+                    spMapDrone.get(fb.getServicePoint().getId()),fb.getDroneId());
+            if(!deliveryPlanHelper.droneMeetsRec(droneById.get(fb.getDroneId()),
+                    droneItem,rec,day))
+                continue;
 
-    // Checks if a drone can fulfill all dispatches
-    // given capacity/heating/cooling, cost bound, and availability windows.
-    private boolean canHandleAll(Drone drone, List<AvailabilityWindow> windows,
-                                 List<MedDispatchRec> dispatches, int numOfDeliveries) {
-        if (drone == null || drone.getCapability() == null) return false;
-        var cap = drone.getCapability();
-
-        for (MedDispatchRec rec : dispatches) {
+            // Can't bring medicine that require both heating and cooling
+            if(rec.getRequirements().isCooling())
+                if (fb.isHasHeating())
+                    continue;
+            if (rec.getRequirements().isHeating())
+                if (fb.isHasCooling())
+                    continue;
+            // Capacity check
+            if(rec.getRequirements().getCapacity()+fb.getCurrentLoad()>fb.getCapacity())
+                continue;
+            // Max Step Check
+            List<Coordinate> forward =  geo.pathBetween(fb.getEnd(),rec.getDelivery(),
+                    restrictedPolys,boxes);
+            if (forward.isEmpty()) continue;
+            List<Coordinate> forwardWithHover = new ArrayList<>(forward);
+            forwardWithHover.add(forward.getLast());
+            int fSteps = forwardWithHover.size() - 1;
+            // Early termination
+            if (fSteps + fb.getStepsUsed() > fb.getMaxMoves()){
+                continue;
+            }
+            // PreCheck return step and cost
+            List<Coordinate> back = geo.pathBetween(rec.getDelivery(),
+                    fb.getServicePoint().getLocation(),restrictedPolys,boxes);
+            if (back.isEmpty()) continue;
+            int bSteps =  back.size() - 1;
+            if (fSteps + bSteps + fb.getStepsUsed() > fb.getMaxMoves()){
+                continue;
+            }
+            Double maxCost= rec.getRequirements().getMaxCost();
+            if(maxCost !=null){
+                int deliveryCount = fb.getDeliveryCount()+1;
+                List<Double> existingMaxCost = new ArrayList<>(fb.getExistingMaxCosts());
+                existingMaxCost.add(maxCost);
+                double estForEachDelivery = ((fb.getStepsUsed()+ fSteps + bSteps)*fb.getCostPerMove() +
+                        fb.getCostInitial() + fb.getCostFinal())/deliveryCount;
+                if(!deliveryPlanHelper.withinAllMaxCosts(estForEachDelivery,existingMaxCost,1e-12))
+                    continue;
+            }
             var req = rec.getRequirements();
-            if (cap.getCapacity() < req.getCapacity()) return false;
-            if (req.isCooling() && !cap.isCooling()) return false;
-            if (req.isHeating() && !cap.isHeating()) return false;
-
-            if (req.getMaxCost() != null) {
-                double fixed = cap.getCostInitial() + cap.getCostFinal();
-                if (fixed / numOfDeliveries > req.getMaxCost()) return false;
-            }
-
-            if (!isAvailableAt(windows, rec.getDate(), rec.getTime())) return false;
+            fb.addSegment(rec.getId(),forwardWithHover,fSteps,req.getCapacity(),
+                    req.getMaxCost(),req.isCooling(),req.isHeating());
+            //fb.setReservedReturnSteps(bSteps);
+            return true;
         }
-        return true;
+        return false;
     }
 
-    // Check if a drone has any availability window covering the given date & time
-    private boolean isAvailableAt(List<AvailabilityWindow> windows, LocalDate date, LocalTime time) {
-        DayOfWeek dow = date.getDayOfWeek();
-        return windows.stream()
-                .filter(w -> w.getDayOfWeek() == dow)
-                .anyMatch(w -> w.includes(time));
-    }
-
-
-    // Construct a bound box for a region
-    private BoundBox polyBox(List<Coordinate> rectClosed){
-        double minLng = Double.POSITIVE_INFINITY, minLat = Double.POSITIVE_INFINITY;
-        double maxLng = Double.NEGATIVE_INFINITY, maxLat = Double.NEGATIVE_INFINITY;
-        for (var c: rectClosed){
-            minLng = Math.min(minLng, c.getLng()); maxLng = Math.max(maxLng, c.getLng());
-            minLat = Math.min(minLat, c.getLat()); maxLat = Math.max(maxLat, c.getLat());
+    private void closeFlight(FlightBuilder fb,List<FlightBuilder> finished,
+                                List<List<Coordinate>> restrictedPolys, List<BoundBox> boxes){
+        // Same path to return if only one delivery
+        // remove reversed first for hover
+        if(fb.getDeliveryCount() == 1){
+            List<Coordinate> forwardWithHover = fb.getSegments().getFirst().getFlightPath();
+            List<Coordinate> back = new ArrayList<>(forwardWithHover);
+            back.removeLast();
+            back = back.reversed();
+            fb.addReturn(back,(back.size()-1));
+            finished.add(fb);
         }
-        return new BoundBox(new Coordinate(maxLng,maxLat),new Coordinate(minLng,minLat));
+        else{
+            List<Coordinate> back = geo.pathBetween(fb.getEnd(),
+                fb.getServicePoint().getLocation(), restrictedPolys, boxes);
+            fb.addReturn(back,(back.size()-1));
+            finished.add(fb);
+        }
     }
-
 }

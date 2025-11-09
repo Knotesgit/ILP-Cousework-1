@@ -9,4 +9,5 @@ public interface DroneService {
     List<Integer> getDronesByAttribute(String attribute, String value);
     List<Integer> queryByAttributes(List<QueryCondition> conditions);
     List<Integer> queryAvailableDrones(List<MedDispatchRec> dispatches);
+    CalcDeliveryPathResponse calcDeliveryPath(List<MedDispatchRec> dispatches);
 }

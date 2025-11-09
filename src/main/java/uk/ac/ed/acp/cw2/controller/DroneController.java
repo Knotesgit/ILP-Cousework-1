@@ -11,7 +11,7 @@ import java.util.List;
 
 /**
  * Controller providing endpoints for drone-related queries.
- * All use /api/v1 and return 200, 400, or 404 as specified.
+ * All use /api/v1 and return 200, or 404 as specified.
  */
 @RestController()
 @RequestMapping("/api/v1")
@@ -33,7 +33,7 @@ public class DroneController {
      * - Returns 200 OK with a JSON array of matching drone IDs.
      */
     @GetMapping("/dronesWithCooling/{state}")
-    public List<Integer> dronesWithCooling(@PathVariable boolean state) {
+    public List<Integer> dronesWithCooling(@PathVariable Boolean state) {
         return droneService.getDronesWithCooling(state);
     }
 
@@ -45,7 +45,7 @@ public class DroneController {
      * - Returns 404 Not Found if no drone matches the given ID.
      */
     @GetMapping("/droneDetails/{id}")
-    public ResponseEntity<Drone> droneDetails(@PathVariable int id) {
+    public ResponseEntity<Drone> droneDetails(@PathVariable Integer id) {
         Drone drone = droneService.getDroneDetails(id);
         if (drone == null) {
             return ResponseEntity.notFound().build();
@@ -81,5 +81,11 @@ public class DroneController {
     @PostMapping("/queryAvailableDrones")
     public List<Integer> queryAvailableDrones(@RequestBody List<MedDispatchRec> dispatches) {
         return droneService.queryAvailableDrones(dispatches);
+    }
+
+
+    @PostMapping("/calcDeliveryPath")
+    public CalcDeliveryPathResponse  calcDeliveryPath(@RequestBody List<MedDispatchRec> dispatches){
+        return droneService.calcDeliveryPath(dispatches);
     }
 }

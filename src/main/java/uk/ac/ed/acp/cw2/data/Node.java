@@ -11,7 +11,7 @@ public class Node {
     int g;          // num of steps moved
     int f;          // g + h
     Node parent;
-    Node(Coordinate p, int g, int f, Node parent){
+    public Node(Coordinate p, int g, int f, Node parent){
         this.p=p;
         this.g=g;
         this.f=f;
