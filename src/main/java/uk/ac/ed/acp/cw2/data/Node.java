@@ -3,7 +3,7 @@ package uk.ac.ed.acp.cw2.data;
 import lombok.Getter;
 import lombok.Setter;
 
-// Data model to represent a node in a star
+// Data model to represent a node in A*
 @Getter
 @Setter
 public class Node {

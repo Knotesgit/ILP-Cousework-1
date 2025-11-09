@@ -21,7 +21,6 @@ public class GeoServiceImpl implements GeoService {
                     .mapToDouble(i -> i * 22.5)
                     .toArray();
 
-
     // Check whether two pos are near (distance < 0.00015)
     @Override
     public boolean isNear(Coordinate pos1, Coordinate pos2) {
@@ -96,6 +95,8 @@ public class GeoServiceImpl implements GeoService {
    }
 
 
+
+   // Determine if a single movement step intersects any restricted polygon.
    @Override
    public boolean stepBlocked(Coordinate from, Coordinate to,
                               List<List<Coordinate>> rects, List<BoundBox> rectBoxes){
@@ -118,13 +119,15 @@ public class GeoServiceImpl implements GeoService {
        return false;
    }
 
+
+   // A* search on a fixed STEP grid with 16-direction branching and Euclidean heuristic.
    @Override
    public List<Coordinate> pathBetween(
            Coordinate start, Coordinate goal,
            List<List<Coordinate>> rects, List<BoundBox> rectBoxes) {
         start = PathFindingHelper.normalize(start);
         goal  = PathFindingHelper.normalize(goal);
-        // Early termination if start of end at restricted area
+       // Early exit if start or goal lies within any restricted area
         if (rects != null && !rects.isEmpty()){
             for(List<Coordinate> poly: rects){
             if(isPointInRegion(start, poly) || isPointInRegion(goal, poly))
@@ -133,9 +136,11 @@ public class GeoServiceImpl implements GeoService {
         }
         Map<String, Integer> bestG = new HashMap<>();
         PriorityQueue<Node> open = new PriorityQueue<>(Comparator.comparingInt(Node::getF));
+        // Seed start node
         Node s = new Node(start, 0, heuristic(start, goal), null);
         open.add(s);
         bestG.put(PathFindingHelper.keyOf(start), 0);
+        // Main A* loop
         while (!open.isEmpty()) {
             Node cur = open.poll();
 
@@ -145,6 +150,7 @@ public class GeoServiceImpl implements GeoService {
             for (double ang : ANGLES) {
                 Coordinate rawNext = nextPosition(cur.getP(), ang);
                 Coordinate nxt = PathFindingHelper.normalize(rawNext);
+                // Obstacle check for this step
                 if (stepBlocked(cur.getP(), nxt, rects, rectBoxes)) continue;
                 int ng = cur.getG() + 1;
                 String k = PathFindingHelper.keyOf(nxt);
@@ -159,14 +165,7 @@ public class GeoServiceImpl implements GeoService {
         return List.of();
     }
 
-
-    private boolean triggerByBoxOR(Coordinate a, Coordinate b, BoundBox box){
-        return pathFindingHelper.triggerByBoxOR(a, b, box);
-    }
-
-    private int orient(Coordinate a, Coordinate b, Coordinate c) {
-        return pathFindingHelper.orient(a, b, c);
-    }
+    // Segment-segment intersection with collinearity handling.
     private boolean segmentsIntersect(Coordinate p1, Coordinate p2, Coordinate q1, Coordinate q2) {
         int o1 = pathFindingHelper.orient(p1, p2, q1), o2 = pathFindingHelper.orient(p1, p2, q2);
         int o3 = pathFindingHelper.orient(q1, q2, p1), o4 = pathFindingHelper.orient(q1, q2, p2);
@@ -178,13 +177,10 @@ public class GeoServiceImpl implements GeoService {
         return false;
     }
 
-    //
+
+    // Admissible heuristic: optimistic step count = floor(distance / STEP)
     private int heuristic(Coordinate a, Coordinate b){
         double d = distanceBetween(a,b);
         return (int) Math.floor(d / STEP);
-    }
-
-    private List<Coordinate> reconstruct(Node t){
-        return pathFindingHelper.reconstruct(t);
     }
 }

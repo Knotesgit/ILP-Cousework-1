@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+// Represents a service point from which drones can depart and return.
 @Getter
 @Setter
 @NoArgsConstructor

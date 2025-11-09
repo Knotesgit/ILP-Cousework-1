@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import java.util.List;
 
+// Represents a restricted (no-fly) area in the ILP dataset.
 @Getter
 @Setter
 @NoArgsConstructor

@@ -83,7 +83,11 @@ public class DroneController {
         return droneService.queryAvailableDrones(dispatches);
     }
 
-
+    /**
+     * POST /api/v1/calcDeliveryPath
+     * - 200 OK with a CalcDeliveryPathResponse JSON body describing all planned drone paths.
+     * - Returns an empty plan (zero cost/moves) if no valid routes are possible.
+     */
     @PostMapping("/calcDeliveryPath")
     public CalcDeliveryPathResponse  calcDeliveryPath(@RequestBody List<MedDispatchRec> dispatches){
         return droneService.calcDeliveryPath(dispatches);

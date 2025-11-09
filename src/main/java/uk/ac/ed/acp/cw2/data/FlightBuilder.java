@@ -9,6 +9,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
+//Mutable builder object used during delivery path planning.
 @Getter
 @Setter
 public class FlightBuilder {
@@ -24,18 +25,18 @@ public class FlightBuilder {
 
     // Status
     int stepsUsed = 0;
-    //int reservedReturnSteps = 0;
     Coordinate end;          // Current end
     double currentLoad = 0;
     boolean hasCooling = false, hasHeating = false;
 
-    //
+    // Number of deliveries included so far
     int deliveryCount = 0;
     List<Double> existingMaxCosts = new ArrayList<>();
 
-    //
+    // Ordered list of path segments representing each delivery
     List<CalcDeliveryPathResponse.DeliverySegment> segments = new ArrayList<>();
 
+    // Construct a new builder for a drone’s initial flight plan.
     public FlightBuilder(int droneId, ServicePoint sp, double capacity, int maxMoves,
                          double cpm, double ci, double cf,
                          MedDispatchRec first) {
@@ -54,6 +55,8 @@ public class FlightBuilder {
         this.flightStart = first.getTime();
     }
 
+    // Append a new delivery segment to this flight plan.
+    // Updates step count, position, capacity, and requirement flags.
     public void addSegment(int deliveryId, List<Coordinate> path, int steps, double addedLoad, Double maxCost,
                     boolean markCooling, boolean markHeating) {
         var seg = new CalcDeliveryPathResponse.DeliverySegment();
@@ -71,6 +74,8 @@ public class FlightBuilder {
         this.hasHeating  = this.hasHeating  || markHeating;
     }
 
+    // Attach a return path to the last delivery segment, representing
+    // the drone’s journey back to the service point.
     public void addReturn(List<Coordinate> back, int steps) {
         if (!segments.isEmpty()) {
             var lastPath = segments.getLast().getFlightPath();

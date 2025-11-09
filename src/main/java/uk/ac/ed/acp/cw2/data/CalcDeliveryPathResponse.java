@@ -7,6 +7,7 @@ import lombok.Setter;
 
 import java.util.List;
 
+// Response model for the /calcDeliveryPath endpoint.
 @Getter
 @Setter
 @NoArgsConstructor
@@ -16,7 +17,7 @@ public class CalcDeliveryPathResponse {
     private int totalMoves;
     private List<DronePath> dronePaths;
 
-
+    //Represents the entire flight plan of a single drone.
     @Getter
     @Setter
     @NoArgsConstructor
@@ -26,6 +27,7 @@ public class CalcDeliveryPathResponse {
         private List<DeliverySegment> deliveries;
     }
 
+    //Represents a single delivery within a drone's route.
     @Getter
     @Setter
     @NoArgsConstructor
