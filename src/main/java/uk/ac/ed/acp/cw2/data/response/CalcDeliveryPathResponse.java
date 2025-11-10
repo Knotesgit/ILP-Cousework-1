@@ -1,9 +1,10 @@
-package uk.ac.ed.acp.cw2.data;
+package uk.ac.ed.acp.cw2.data.response;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import uk.ac.ed.acp.cw2.data.Coordinate;
 
 import java.util.List;
 

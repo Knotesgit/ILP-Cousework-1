@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uk.ac.ed.acp.cw2.data.*;
+import uk.ac.ed.acp.cw2.data.response.CalcDeliveryPathResponse;
 import uk.ac.ed.acp.cw2.external.DroneService;
 
 import java.util.List;
@@ -89,7 +90,7 @@ public class DroneController {
      * - Returns an empty plan (zero cost/moves) if no valid routes are possible.
      */
     @PostMapping("/calcDeliveryPath")
-    public CalcDeliveryPathResponse  calcDeliveryPath(@RequestBody List<MedDispatchRec> dispatches){
+    public CalcDeliveryPathResponse calcDeliveryPath(@RequestBody List<MedDispatchRec> dispatches){
         return droneService.calcDeliveryPath(dispatches);
     }
 }
