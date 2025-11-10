@@ -83,7 +83,7 @@ public class QueryDroneHelper {
     }
 
     // Builds an index of availability windows: droneId -> DayOfWeek -> list of [from, until] time windows.
-    public static Map<Integer, List<DroneForServicePoint.Availability>>
+    public Map<Integer, List<DroneForServicePoint.Availability>>
     buildAvailabilityIndex(List<DroneForServicePoint> dfspList) {
         Map<Integer, List<DroneForServicePoint.Availability>> map = new HashMap<>();
         if (dfspList == null) return map;
@@ -128,7 +128,7 @@ public class QueryDroneHelper {
 
 
     // Check whether a list of time windows contains certain data and time
-    public static boolean isAvailableAt(List<DroneForServicePoint.Availability> windows,
+    private boolean isAvailableAt(List<DroneForServicePoint.Availability> windows,
                                         LocalDate date, LocalTime time) {
         // No date and time restriction
         if (date == null && time == null) return true;
@@ -160,14 +160,14 @@ public class QueryDroneHelper {
     }
 
     // Parse English day-of-week string into DayOfWeek
-    private static DayOfWeek parseDayOfWeek(String s) {
+    private DayOfWeek parseDayOfWeek(String s) {
         if (s == null) return null;
         try { return DayOfWeek.valueOf(s.toUpperCase(Locale.ROOT)); }
         catch (Exception e) { return null; }
     }
 
     // Parse a time string (HH:mm:ss) into  LocalTime
-    private static LocalTime parseTimeSafe(String s) {
+    private LocalTime parseTimeSafe(String s) {
         if (s == null) return null;
         try { return LocalTime.parse(s); }
         catch (Exception e) { return null; }

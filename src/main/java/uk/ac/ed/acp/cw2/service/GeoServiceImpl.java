@@ -9,14 +9,14 @@ import java.util.*;
 
 @Service
 public class GeoServiceImpl implements GeoService {
-    private static final double STEP = 0.00015;
+    private final double STEP = 0.00015;
 
     // Numerical epsilon for floating-point comparisons only.
-    private static final double EPSILON = 1e-12;
+    private final double EPSILON = 1e-12;
 
     private final PathFindingHelper pathFindingHelper = new PathFindingHelper();
     // 16 directions
-    private static final double[] ANGLES =
+    private final double[] ANGLES =
             java.util.stream.IntStream.range(0, 16)
                     .mapToDouble(i -> i * 22.5)
                     .toArray();

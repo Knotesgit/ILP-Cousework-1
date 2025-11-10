@@ -10,7 +10,7 @@ import java.util.List;
 public class ValidationServiceImpl implements ValidationService {
 
     // Numerical epsilon for floating-point comparisons only.
-    private static final double EPSILON = 1e-12;
+    private final double EPSILON = 1e-12;
 
     // Checks whether a coordinate is non-null and within valid lat/lng ranges
     @Override
