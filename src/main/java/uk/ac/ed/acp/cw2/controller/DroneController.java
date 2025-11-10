@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uk.ac.ed.acp.cw2.data.*;
 import uk.ac.ed.acp.cw2.data.response.CalcDeliveryPathResponse;
+import uk.ac.ed.acp.cw2.data.response.GeoJsonResponse;
 import uk.ac.ed.acp.cw2.external.DroneService;
 
 import java.util.List;
@@ -92,5 +93,10 @@ public class DroneController {
     @PostMapping("/calcDeliveryPath")
     public CalcDeliveryPathResponse calcDeliveryPath(@RequestBody List<MedDispatchRec> dispatches){
         return droneService.calcDeliveryPath(dispatches);
+    }
+
+    @PostMapping("/calcDeliveryPathAsGeoJson")
+    public GeoJsonResponse calcDeliveryPathAsGeoJson(@RequestBody List<MedDispatchRec> dispatches){
+        return droneService.calcDeliveryPathAsGeoJson(dispatches);
     }
 }

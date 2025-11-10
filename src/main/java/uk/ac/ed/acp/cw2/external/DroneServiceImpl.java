@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import uk.ac.ed.acp.cw2.data.*;
 import uk.ac.ed.acp.cw2.data.DroneForServicePoint;
 import uk.ac.ed.acp.cw2.data.response.CalcDeliveryPathResponse;
+import uk.ac.ed.acp.cw2.data.response.GeoJsonResponse;
 import uk.ac.ed.acp.cw2.utility.DeliveryPlanHelper;
 import uk.ac.ed.acp.cw2.utility.QueryDroneHelper;
 import uk.ac.ed.acp.cw2.service.GeoService;
@@ -89,24 +90,8 @@ public class DroneServiceImpl implements DroneService {
     @Override
     public CalcDeliveryPathResponse calcDeliveryPath(List<MedDispatchRec> recs) {
         // Basic record verification
-        if (recs == null || recs.isEmpty())
-            return deliveryPlanHelper.emptyResponse();
-        for (MedDispatchRec rec : recs){
-            if (rec.getId() == null)
-                return deliveryPlanHelper.emptyResponse();
-            if (rec.getRequirements() == null)
-                return deliveryPlanHelper.emptyResponse();
-            if(rec.getDelivery() == null)
-                return deliveryPlanHelper.emptyResponse();
-            if(rec.getDate() == null && rec.getTime() !=null)
-                return deliveryPlanHelper.emptyResponse();
-            var req = rec.getRequirements();
-            if (req.isCooling() && req.isHeating())
-                return deliveryPlanHelper.emptyResponse();
-            if (req.getCapacity() == null)
-                return deliveryPlanHelper.emptyResponse();
-
-        }
+        if(!deliveryPlanHelper.isValidDispatchList(recs))
+            return deliveryPlanHelper.emptyDeliveryResponse();
 
         List<Drone> drones = ilpClient.getAllDrones();
         List<ServicePoint> servicePts = ilpClient.getServicePoints();
@@ -154,7 +139,7 @@ public class DroneServiceImpl implements DroneService {
             for (MedDispatchRec r : today) {
                 if (!tryAssignOrStartFlight(servicePts, spMapDrone, droneById,
                         restrictedPolys, BBoxes, r, day, activeFlights, finishedFlights)) {
-                    return deliveryPlanHelper.emptyResponse();
+                    return deliveryPlanHelper.emptyDeliveryResponse();
                 }
             }
 
@@ -169,7 +154,76 @@ public class DroneServiceImpl implements DroneService {
             for(FlightBuilder fb : activeFlights)
                 closeFlight(fb,finishedFlights,restrictedPolys,BBoxes);
         }
-        return deliveryPlanHelper.buildResponse(finishedFlights);
+        return deliveryPlanHelper.buildDeliveryResponse(finishedFlights);
+    }
+
+    @Override
+    public GeoJsonResponse calcDeliveryPathAsGeoJson(List<MedDispatchRec> recs){
+        // Basic record verification
+        if(!deliveryPlanHelper.isValidDispatchList(recs))
+            return deliveryPlanHelper.emptyGeoJsonResponse();
+
+        // Fast termination if not Completable by single drone(different date)
+        LocalDate date = recs.get(0).getDate();
+        for (MedDispatchRec rec : recs)
+            if(!rec.getDate().equals(date))
+                return deliveryPlanHelper.emptyGeoJsonResponse();
+
+        List<Drone> drones = ilpClient.getAllDrones();
+        List<ServicePoint> servicePts = ilpClient.getServicePoints();
+        List<RestrictedArea> areas = ilpClient.getRestrictedAreas();
+        List<DroneForServicePoint> dfsp = ilpClient.getDronesForServicePoints();
+        List<List<Coordinate>> restrictedPolys = deliveryPlanHelper.extractPolygons(areas);
+        List<BoundBox> BBoxes = deliveryPlanHelper.extractBBoxes(areas);
+        // Map drone by drone id
+        Map<Integer, Drone> droneById = drones.stream().
+                collect(Collectors.toMap(Drone::getId, d -> d));
+        // Map serviceId to DroneForServicePoint
+        Map<Integer, DroneForServicePoint> spMapDrone = dfsp.stream()
+                .collect(Collectors.toMap
+                        (DroneForServicePoint::getServicePointId, e -> e));
+
+        List<Integer> availableDrones = queryAvailableDrones(recs);
+        if(availableDrones == null || availableDrones.isEmpty())
+            return deliveryPlanHelper.emptyGeoJsonResponse();
+        Set<Integer> allow = new HashSet<>(availableDrones);
+        droneById.keySet().retainAll(allow);
+        if (droneById.isEmpty()) return deliveryPlanHelper.emptyGeoJsonResponse();
+
+        // Dispatch in time order.
+        recs.sort(Comparator.comparing(MedDispatchRec::getTime).thenComparing(MedDispatchRec::getId));
+
+        FlightBuilder fb = openNewFlight(
+                servicePts, droneById, spMapDrone,
+                recs.get(0), restrictedPolys, BBoxes, recs.get(0).getDate()
+        );
+
+        if (fb == null) return deliveryPlanHelper.emptyGeoJsonResponse();
+        List<FlightBuilder> activeFlights = new ArrayList<>();
+        List<FlightBuilder> finishedFlights = new ArrayList<>();
+        activeFlights.add(fb);
+
+        boolean ok = true;
+        for (int i = 1; i < recs.size(); i++) {
+            boolean merged = tryMergeFlight(
+                    recs.get(i), activeFlights, finishedFlights,
+                    droneById, spMapDrone, restrictedPolys, BBoxes,
+                    recs.get(i).getDate()
+            );
+            if (!merged) {
+                ok = false;
+                break; }
+        }
+
+        if (!ok)
+            return deliveryPlanHelper.emptyGeoJsonResponse();
+        if (activeFlights.size() != 1)
+            return deliveryPlanHelper.emptyGeoJsonResponse();
+        closeFlight(activeFlights.get(0), finishedFlights, restrictedPolys, BBoxes);
+        if (finishedFlights.size() != 1 ||
+                finishedFlights.get(0).getDeliveryCount() != recs.size())
+            return deliveryPlanHelper.emptyGeoJsonResponse();
+        return deliveryPlanHelper.buildGeoJsonResponse(finishedFlights.get(0));
     }
 
     private boolean tryAssignOrStartFlight(
@@ -209,6 +263,11 @@ public class DroneServiceImpl implements DroneService {
         spCandidates.sort(Comparator.comparingDouble(
                 sp -> geo.distanceBetween(sp.getLocation(), target)));
                 for (ServicePoint sp:spCandidates){
+                    List<Integer> availableDroneIds = deliveryPlanHelper.
+                            feasibleDroneIdsAtSP(spMapDrone.get(sp.getId()),
+                                    droneById, rec, day);
+                    if(availableDroneIds.isEmpty())
+                        continue;
                     List<Coordinate> forward = geo.pathBetween(
                             sp.getLocation(), target, restrictedPolys, boxes);
                     if(forward.isEmpty()) continue;
@@ -218,12 +277,6 @@ public class DroneServiceImpl implements DroneService {
                     // Same path to return if only one delivery
                     // +1 for hover
                     int neededStepsNow = fSteps + fSteps + 1;
-
-                    List<Integer> availableDroneIds = deliveryPlanHelper.
-                            feasibleDroneIdsAtSP(spMapDrone.get(sp.getId()),
-                                    droneById, rec, day);
-                    if(availableDroneIds.isEmpty())
-                        continue;
                     int bestDroneId = -1;
                     double bestEstCost = (rec.getRequirements().getMaxCost()==null) ?
                             Double.MAX_VALUE : rec.getRequirements().getMaxCost();
@@ -249,7 +302,6 @@ public class DroneServiceImpl implements DroneService {
                             cap.getMaxMoves(),
                             cap.getCostPerMove(),
                             cap.getCostInitial(), cap.getCostFinal(),rec);
-                    //fb.setReservedReturnSteps(fSteps);
                     fb.addSegment(
                             rec.getId(),
                             forwardWithHover,
@@ -332,7 +384,6 @@ public class DroneServiceImpl implements DroneService {
             var req = rec.getRequirements();
             fb.addSegment(rec.getId(),forwardWithHover,fSteps,req.getCapacity(),
                     req.getMaxCost(),req.isCooling(),req.isHeating());
-            //fb.setReservedReturnSteps(bSteps);
             return true;
         }
         return false;

@@ -52,7 +52,10 @@ public class FlightBuilder {
         this.end = sp.getLocation();
 
         this.flightDate = first.getDate();
-        this.flightDOW  = this.flightDate.getDayOfWeek();
+        if(flightDate!=null)
+            this.flightDOW  = this.flightDate.getDayOfWeek();
+        else
+            this.flightDOW  =null;
         this.flightStart = first.getTime();
     }
 

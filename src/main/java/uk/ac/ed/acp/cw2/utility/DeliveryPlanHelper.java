@@ -2,7 +2,7 @@ package uk.ac.ed.acp.cw2.utility;
 
 import uk.ac.ed.acp.cw2.data.*;
 import uk.ac.ed.acp.cw2.data.DroneForServicePoint;
-import uk.ac.ed.acp.cw2.data.response.CalcDeliveryPathResponse;
+import uk.ac.ed.acp.cw2.data.response.*;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -16,9 +16,24 @@ import java.util.Map;
 public class DeliveryPlanHelper {
     public DeliveryPlanHelper() {
     }
+    // Check whether a list of MedDispatchRec valid or not
+    public boolean isValidDispatchList(List<MedDispatchRec> recs) {
+        if (recs == null || recs.isEmpty()) return false;
+        for (MedDispatchRec rec : recs) {
+            if (rec == null) return false;
+            if (rec.getId() == null) return false;
+            if (rec.getRequirements() == null) return false;
+            if (rec.getDelivery() == null) return false;
+            if (rec.getDate() == null && rec.getTime() != null) return false;
+            var req = rec.getRequirements();
+            if (req.isCooling() && req.isHeating()) return false;
+            if (req.getCapacity() == null) return false;
+        }
+        return true;
+    }
 
     // Create an empty CalcDeliveryPathResponse with no drone paths and zero cost/moves.
-    public CalcDeliveryPathResponse emptyResponse() {
+    public CalcDeliveryPathResponse emptyDeliveryResponse() {
         CalcDeliveryPathResponse response = new CalcDeliveryPathResponse();
         response.setDronePaths(new ArrayList<>());  // empty list
         response.setTotalCost(0.0);
@@ -27,14 +42,14 @@ public class DeliveryPlanHelper {
     }
 
     // Aggregate a list of finished flights into a CalcDeliveryPathResponse
-    public CalcDeliveryPathResponse buildResponse(List<FlightBuilder> finishedFlights) {
+    public CalcDeliveryPathResponse buildDeliveryResponse(List<FlightBuilder> finishedFlights) {
         CalcDeliveryPathResponse response = new CalcDeliveryPathResponse();
         double totalCost = 0.0;
         int totalMoves = 0;
         List<CalcDeliveryPathResponse.DronePath> dronePathsList = new ArrayList<>();
 
         if (finishedFlights == null || finishedFlights.isEmpty()) {
-            return emptyResponse();
+            return emptyDeliveryResponse();
         }
 
         for (FlightBuilder fb : finishedFlights) {
@@ -73,6 +88,51 @@ public class DeliveryPlanHelper {
         response.setDronePaths(dronePathsList);
         return response;
     }
+
+    // Create an empty GeoJsonResponse with no drone paths and null droneId
+    public GeoJsonResponse emptyGeoJsonResponse() {
+        GeoJsonResponse res = new GeoJsonResponse();
+        GeoJsonResponse.Geometry geom = new GeoJsonResponse.Geometry();
+        geom.setCoordinates(new ArrayList<>());
+        res.setGeometry(geom);
+        GeoJsonResponse.Properties props = new GeoJsonResponse.Properties();
+        props.setDroneId(null);
+        res.setProperties(props);
+        return res;
+    }
+
+    public GeoJsonResponse buildGeoJsonResponse(FlightBuilder fb) {
+        if (fb == null || fb.getSegments() == null || fb.getSegments().isEmpty()) {
+            return emptyGeoJsonResponse();
+        }
+
+        List<List<Double>> coords = new ArrayList<>();
+        for (var seg : fb.getSegments()) {
+            if (seg == null || seg.getFlightPath() == null || seg.getFlightPath().isEmpty()) continue;
+            List<List<Double>> path = toLngLat(seg.getFlightPath());
+
+            if (coords.isEmpty()) {
+                coords.addAll(path);
+            } else {
+                // Prevent duplication
+                coords.addAll(path.subList(1, path.size()));
+            }
+        }
+        if (coords.isEmpty()) {
+            return emptyGeoJsonResponse();
+        }
+        GeoJsonResponse res = new GeoJsonResponse();
+        GeoJsonResponse.Geometry geom = new GeoJsonResponse.Geometry();
+        geom.setCoordinates(coords);
+        res.setGeometry(geom);
+        GeoJsonResponse.Properties props = new GeoJsonResponse.Properties();
+        props.setDroneId(fb.getDroneId());
+        res.setProperties(props);
+
+        return res;
+    }
+
+
 
     // Extract all polygon vertex lists from the given restricted areas.
     public List<List<Coordinate>> extractPolygons(List<RestrictedArea> areas) {
@@ -217,5 +277,14 @@ public class DeliveryPlanHelper {
         if (s == null) return null;
         try { return LocalTime.parse(s); }
         catch (Exception e) { return null; }
+    }
+
+    // Convert Coordinate to List of pairs of Lng lat
+    private List<List<Double>> toLngLat(List<Coordinate> line) {
+        List<List<Double>> out = new ArrayList<>(line.size());
+        for (Coordinate c : line) {
+            if (c != null) out.add(List.of(c.getLng(), c.getLat()));
+        }
+        return out;
     }
 }

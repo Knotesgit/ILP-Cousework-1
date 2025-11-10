@@ -14,6 +14,9 @@ public class GeoServiceImpl implements GeoService {
     // Numerical epsilon for floating-point comparisons only.
     private final double EPSILON = 1e-12;
 
+    // Prevent memory explosion and infinite expansion in A* search
+    private final int EXPANSION_CAP = 250_000;
+
     private final PathFindingHelper pathFindingHelper = new PathFindingHelper();
     // 16 directions
     private final double[] ANGLES =
@@ -140,8 +143,13 @@ public class GeoServiceImpl implements GeoService {
         Node s = new Node(start, 0, heuristic(start, goal), null);
         open.add(s);
         bestG.put(PathFindingHelper.keyOf(start), 0);
+
+        int expansions = 0;
         // Main A* loop
         while (!open.isEmpty()) {
+            // Exit if explored too many node;
+            expansions++;
+            if (expansions > EXPANSION_CAP) return List.of();
             Node cur = open.poll();
 
             if (isNear(cur.getP(), goal)) {

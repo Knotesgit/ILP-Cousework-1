@@ -16,7 +16,7 @@ public class PathFindingHelper {
     private static final double EPSILON = 1e-12;
 
     // Quantization scale used to normalize floating values into integer keys
-    private static final long Q = 1_000_000_000_000L;
+    private static final long Q = 10_000_000L;
     public PathFindingHelper() {
     }
 
