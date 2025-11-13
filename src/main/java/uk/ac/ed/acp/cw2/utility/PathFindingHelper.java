@@ -11,14 +11,13 @@ import java.util.List;
 
 // Helper utilities used by the path finding logic.
 public class PathFindingHelper {
+    private static final double STEP = 0.00015;
 
     // Tolerance for floating-point comparisons
     private static final double EPSILON = 1e-12;
 
     // Quantization scale used to normalize floating values into integer keys
     private static final long Q = 10_000_000L;
-    public PathFindingHelper() {
-    }
 
     // Quantize longitude to a long integer by multiplying with link Q
     public static long qlng(double x) {
@@ -30,28 +29,25 @@ public class PathFindingHelper {
         return Math.round(y * Q);
     }
 
+    // Admissible heuristic: optimistic step count = floor(distance / STEP)
+    public static int heuristic(Coordinate a, Coordinate b){
+        double d = GeoUtilities.distanceBetween(a,b);
+        return (int) Math.floor(d / STEP);
+    }
+
     // Helper to check whether a value line between higher and lower bound
-    public boolean axisHits(double val, double low, double high) {
+    public static boolean axisHits(double val, double low, double high) {
         return (val >= low - EPSILON) && (val <= high + EPSILON);
     }
 
     // Fast bounding-box prefilter.
     // Returns true if at least one endpoint of segment (a,b) lies inside or near the bounding box.
-    public boolean triggerByBoxOR(Coordinate a, Coordinate b, BoundBox box) {
+    public static boolean triggerByBoxOR(Coordinate a, Coordinate b, BoundBox box) {
         boolean xHit = axisHits(a.getLng(), box.getMin().getLng(), box.getMax().getLng())
                 || axisHits(b.getLng(), box.getMin().getLng(), box.getMax().getLng());
         boolean yHit = axisHits(a.getLat(), box.getMin().getLat(), box.getMax().getLat())
                 || axisHits(b.getLat(), box.getMin().getLat(), box.getMax().getLat());
         return xHit || yHit;
-    }
-
-
-    // Compute the orientation of the ordered triplet (a, b, c)
-    public int orient(Coordinate a, Coordinate b, Coordinate c) {
-        double cross = (b.getLng() - a.getLng()) * (c.getLat() - a.getLat()) - (b.getLat() - a.getLat()) * (c.getLng() - a.getLng());
-        if (cross > EPSILON) return 1;
-        if (cross < -EPSILON) return -1;
-        return 0;
     }
 
     // Generate a unique key string for a coordinate based on quantized values.
@@ -69,10 +65,35 @@ public class PathFindingHelper {
     }
 
     // Reconstruct the full coordinate path by following parent pointers.
-    public List<Coordinate> reconstruct(Node t) {
+    public static List<Coordinate> reconstruct(Node t) {
         ArrayDeque<Coordinate> s = new ArrayDeque<>();
         for (Node p = t; p != null; p = p.getParent())
             s.push(p.getP());
         return new ArrayList<>(s);
     }
+
+    // Determine if a single movement step intersects any restricted polygon.
+    public static boolean stepBlocked(Coordinate from, Coordinate to,
+                                      List<List<Coordinate>> rects, List<BoundBox> rectBoxes){
+        if(rects == null || rects.isEmpty())
+            return false;
+        if(rectBoxes == null || rectBoxes.isEmpty())
+            return false;
+        for (int k = 0; k < rects.size(); k++){
+            var poly = rects.get(k);
+            var box  = rectBoxes.get(k);
+
+            if (!triggerByBoxOR(from, to, box)) continue;
+
+            if (GeoUtilities.isPointInRegion(from, poly) ||GeoUtilities.isPointInRegion(to, poly)) return true;
+
+            for (int i = 0; i < poly.size() - 1; i++){
+                if (GeoUtilities.segmentsIntersect(from, to, poly.get(i), poly.get(i+1))) return true;
+            }
+        }
+        return false;
+    }
+
+
+
 }
