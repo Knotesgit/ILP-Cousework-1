@@ -336,19 +336,13 @@ public class DroneServiceImpl implements DroneService {
                 closeFlight(fb, finished, restrictedPolys, boxes);
                 continue;
             }
+            // Time availability check and cooling/heating functionality check
             var droneItem = deliveryPlanHelper.findDroneItem(
                     spMapDrone.get(fb.getServicePoint().getId()),fb.getDroneId());
             if(!deliveryPlanHelper.droneMeetsRec(droneById.get(fb.getDroneId()),
                     droneItem,rec,day))
                 continue;
 
-            // Can't bring medicine that require both heating and cooling
-            if(rec.getRequirements().isCooling())
-                if (fb.isHasHeating())
-                    continue;
-            if (rec.getRequirements().isHeating())
-                if (fb.isHasCooling())
-                    continue;
             // Capacity check
             if(rec.getRequirements().getCapacity()+fb.getCurrentLoad()>fb.getCapacity())
                 continue;

@@ -55,7 +55,7 @@ public class FlightBuilder {
         if(flightDate!=null)
             this.flightDOW  = this.flightDate.getDayOfWeek();
         else
-            this.flightDOW  =null;
+            this.flightDOW  = null;
         this.flightStart = first.getTime();
     }
 

@@ -128,7 +128,7 @@ public class QueryDroneHelper {
 
 
     // Check whether a list of time windows contains certain data and time
-    private boolean isAvailableAt(List<DroneForServicePoint.Availability> windows,
+    public boolean isAvailableAt(List<DroneForServicePoint.Availability> windows,
                                         LocalDate date, LocalTime time) {
         // No date and time restriction
         if (date == null && time == null) return true;

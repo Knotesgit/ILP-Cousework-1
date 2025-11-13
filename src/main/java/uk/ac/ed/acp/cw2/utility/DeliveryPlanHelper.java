@@ -14,6 +14,7 @@ import java.util.Map;
 
 // Helper utilities used by the delivery planning logic.
 public class DeliveryPlanHelper {
+    QueryDroneHelper queryDroneHelper = new QueryDroneHelper();
     public DeliveryPlanHelper() {
     }
     // Check whether a list of MedDispatchRec valid or not
@@ -198,38 +199,11 @@ public class DeliveryPlanHelper {
         if (req.isHeating() && !cap.isHeating()) return false;
         if (req.getCapacity() > cap.getCapacity()) return false;
 
-        // Determine the effective day-of-week to check availability against
-        DayOfWeek dow = null;
-        if (day != null) dow = day.getDayOfWeek();
-        else if (rec.getDate() != null) dow = rec.getDate().getDayOfWeek();
-
         LocalTime t = rec.getTime();
         List<DroneForServicePoint.Availability> windows =
                 (atSP == null) ? null : atSP.getAvailability();
 
-        // No date/time constraint
-        if (dow == null && t == null) return true;
-
-        if (windows == null || windows.isEmpty()) return false;
-        if (dow != null && t == null) {
-            for (var a : windows) {
-                DayOfWeek wDow = parseDayOfWeek(a.getDayOfWeek());
-                if (wDow != null && wDow == dow) return true;
-            }
-            return false;
-        }
-
-        // Day + time: time must fall inside a window on the same day
-        for (var a : windows) {
-            DayOfWeek wDow = parseDayOfWeek(a.getDayOfWeek());
-            if (wDow == null || wDow != dow) continue;
-            LocalTime from = parseTimeSafe(a.getFrom());
-            LocalTime until = parseTimeSafe(a.getUntil());
-            if (from != null && until != null && !t.isBefore(from) && !t.isAfter(until)) {
-                return true;
-            }
-        }
-        return false;
+        return queryDroneHelper.isAvailableAt(windows,day,t);
     }
 
     // Find the DroneForServicePoint.Item entry for a given drone ID in a service point.
