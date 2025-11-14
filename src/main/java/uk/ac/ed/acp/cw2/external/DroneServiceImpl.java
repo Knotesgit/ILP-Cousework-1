@@ -25,7 +25,7 @@ public class DroneServiceImpl implements DroneService {
 
     // Returns drone IDs filtered by cooling capability.
     @Override
-    public List<String> getDronesWithCooling(Boolean state){
+    public List<String> dronesWithCooling(Boolean state){
         List<Drone> drones = ilpClient.getAllDrones();
         return drones.stream()
                 .filter(d -> d.getCapability().isCooling() == state)
@@ -35,7 +35,7 @@ public class DroneServiceImpl implements DroneService {
 
     // Returns the drone matching the given ID or null if not found
     @Override
-    public Drone getDroneDetails(String id){
+    public Drone droneDetails(String id){
         List<Drone> drones = ilpClient.getAllDrones();
         return drones.stream()
                 .filter(d -> Objects.equals(d.getId(), id))
@@ -45,7 +45,7 @@ public class DroneServiceImpl implements DroneService {
 
     // Returns IDs of drones whose given attribute matches the specified value
     @Override
-    public List<String> getDronesByAttribute(String attribute, String value){
+    public List<String> queryAsPath(String attribute, String value){
         List<Drone> drones = ilpClient.getAllDrones();
         return drones.stream()
                 .filter(d -> QueryDroneHelper.matches(d, attribute, value))
@@ -55,7 +55,7 @@ public class DroneServiceImpl implements DroneService {
 
     // Returns IDs of drones whose attributes' value matches the given query conditions
     @Override
-    public List<String> queryByAttributes(List<QueryCondition> conditions){
+    public List<String> query(List<QueryCondition> conditions){
         List<Drone> drones = ilpClient.getAllDrones();
         return drones.stream()
                 .filter(d -> QueryDroneHelper.matchesConditions(d, conditions))

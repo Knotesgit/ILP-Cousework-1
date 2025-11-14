@@ -36,7 +36,7 @@ public class DroneController {
      */
     @GetMapping("/dronesWithCooling/{state}")
     public List<String> dronesWithCooling(@PathVariable Boolean state) {
-        return droneService.getDronesWithCooling(state);
+        return droneService.dronesWithCooling(state);
     }
 
 
@@ -48,7 +48,7 @@ public class DroneController {
      */
     @GetMapping("/droneDetails/{id}")
     public ResponseEntity<Drone> droneDetails(@PathVariable String id) {
-        Drone drone = droneService.getDroneDetails(id);
+        Drone drone = droneService.droneDetails(id);
         if (drone == null) {
             return ResponseEntity.notFound().build();
         }
@@ -62,7 +62,7 @@ public class DroneController {
      */
     @GetMapping("/queryAsPath/{attribute}/{value}")
     public List<String> queryAsPath(@PathVariable String attribute, @PathVariable String value) {
-        return droneService.getDronesByAttribute(attribute,value);
+        return droneService.queryAsPath(attribute,value);
     }
 
     /**
@@ -72,7 +72,7 @@ public class DroneController {
      */
     @PostMapping("/query")
     public List<String> query(@RequestBody List<QueryCondition> conditions) {
-        return droneService.queryByAttributes(conditions);
+        return droneService.query(conditions);
     }
 
     /**
@@ -95,6 +95,11 @@ public class DroneController {
         return droneService.calcDeliveryPath(dispatches);
     }
 
+    /**
+     * POST /api/v1/calcDeliveryPathAsGeoJson
+     * - 200 OK with a GeoJsonResponse JSON body describing a single drone paths.
+     * - Returns an empty plan (zero cost/moves) if no valid routes are possible.
+     */
     @PostMapping("/calcDeliveryPathAsGeoJson")
     public GeoJsonResponse calcDeliveryPathAsGeoJson(@RequestBody List<MedDispatchRec> dispatches){
         return droneService.calcDeliveryPathAsGeoJson(dispatches);
