@@ -24,7 +24,7 @@ public class CalcDeliveryPathResponse {
     @NoArgsConstructor
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class DronePath {
-        private int droneId;
+        private String droneId;
         private List<DeliverySegment> deliveries;
     }
 

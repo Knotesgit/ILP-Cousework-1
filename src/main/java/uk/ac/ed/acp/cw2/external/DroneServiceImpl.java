@@ -25,7 +25,7 @@ public class DroneServiceImpl implements DroneService {
 
     // Returns drone IDs filtered by cooling capability.
     @Override
-    public List<Integer> getDronesWithCooling(boolean state){
+    public List<String> getDronesWithCooling(Boolean state){
         List<Drone> drones = ilpClient.getAllDrones();
         return drones.stream()
                 .filter(d -> d.getCapability().isCooling() == state)
@@ -35,14 +35,17 @@ public class DroneServiceImpl implements DroneService {
 
     // Returns the drone matching the given ID or null if not found
     @Override
-    public Drone getDroneDetails(int id){
+    public Drone getDroneDetails(String id){
         List<Drone> drones = ilpClient.getAllDrones();
-        return drones.stream().filter(d -> d.getId() == id).findFirst().orElse(null);
+        return drones.stream()
+                .filter(d -> Objects.equals(d.getId(), id))
+                .findFirst()
+                .orElse(null);
     }
 
     // Returns IDs of drones whose given attribute matches the specified value
     @Override
-    public List<Integer> getDronesByAttribute(String attribute, String value){
+    public List<String> getDronesByAttribute(String attribute, String value){
         List<Drone> drones = ilpClient.getAllDrones();
         return drones.stream()
                 .filter(d -> QueryDroneHelper.matches(d, attribute, value))
@@ -52,7 +55,7 @@ public class DroneServiceImpl implements DroneService {
 
     // Returns IDs of drones whose attributes' value matches the given query conditions
     @Override
-    public List<Integer> queryByAttributes(List<QueryCondition> conditions){
+    public List<String> queryByAttributes(List<QueryCondition> conditions){
         List<Drone> drones = ilpClient.getAllDrones();
         return drones.stream()
                 .filter(d -> QueryDroneHelper.matchesConditions(d, conditions))
@@ -62,7 +65,7 @@ public class DroneServiceImpl implements DroneService {
 
     // Returns IDs of drones that are available for a list of medicine dispatch record
     @Override
-    public List<Integer> queryAvailableDrones(List<MedDispatchRec> dispatches){
+    public List<String> queryAvailableDrones(List<MedDispatchRec> dispatches){
         if (dispatches == null || dispatches.isEmpty()) return List.of();
         for (MedDispatchRec rec : dispatches) {
             if (rec.getRequirements() == null) return List.of();
@@ -74,8 +77,9 @@ public class DroneServiceImpl implements DroneService {
         List<DroneForServicePoint> dfsp = ilpClient.getDronesForServicePoints();
         List<ServicePoint> servicePoints = ilpClient.getServicePoints();
 
-        Map<Integer, List<DroneForServicePoint.Availability>> availability = QueryDroneHelper.buildAvailabilityIndex(dfsp);
-        Map<Integer, List<ServicePoint>> homePoints = QueryDroneHelper.buildHomePointIndex(dfsp, servicePoints);
+        Map<String, List<DroneForServicePoint.Availability>> availability
+                = QueryDroneHelper.buildAvailabilityIndex(dfsp);
+        Map<String, List<ServicePoint>> homePoints = QueryDroneHelper.buildHomePointIndex(dfsp, servicePoints);
 
         return drones.stream()
                 .filter(d -> QueryDroneHelper.canHandleAll(d,
@@ -101,7 +105,7 @@ public class DroneServiceImpl implements DroneService {
         List<List<Coordinate>> restrictedPolys = DeliveryPlanHelper.extractPolygons(areas);
         List<BoundBox> BBoxes = DeliveryPlanHelper.extractBBoxes(areas);
         // Map drone by drone id
-        Map<Integer, Drone> droneById = drones.stream().
+        Map<String, Drone> droneById = drones.stream().
                 collect(Collectors.toMap(Drone::getId, d -> d));
         // Map serviceId to DroneForServicePoint
         Map<Integer, DroneForServicePoint> spMapDrone = dfsp.stream()
@@ -177,17 +181,17 @@ public class DroneServiceImpl implements DroneService {
         List<List<Coordinate>> restrictedPolys = DeliveryPlanHelper.extractPolygons(areas);
         List<BoundBox> BBoxes = DeliveryPlanHelper.extractBBoxes(areas);
         // Map drone by drone id
-        Map<Integer, Drone> droneById = drones.stream().
+        Map<String, Drone> droneById = drones.stream().
                 collect(Collectors.toMap(Drone::getId, d -> d));
         // Map serviceId to DroneForServicePoint
         Map<Integer, DroneForServicePoint> spMapDrone = dfsp.stream()
                 .collect(Collectors.toMap
                         (DroneForServicePoint::getServicePointId, e -> e));
 
-        List<Integer> availableDrones = queryAvailableDrones(recs);
+        List<String> availableDrones = queryAvailableDrones(recs);
         if(availableDrones == null || availableDrones.isEmpty())
             return DeliveryPlanHelper.emptyGeoJsonResponse();
-        Set<Integer> allow = new HashSet<>(availableDrones);
+        Set<String> allow = new HashSet<>(availableDrones);
         droneById.keySet().retainAll(allow);
         if (droneById.isEmpty()) return DeliveryPlanHelper.emptyGeoJsonResponse();
 

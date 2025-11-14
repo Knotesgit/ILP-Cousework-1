@@ -11,7 +11,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Drone {
-    private int id;
+    private String id;
     private String name;
     private DroneCapability capability;
 

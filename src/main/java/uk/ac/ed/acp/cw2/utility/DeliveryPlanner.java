@@ -12,7 +12,7 @@ public class DeliveryPlanner {
     public static boolean tryAssignOrStartFlight(
             List<ServicePoint> servicePts,
             Map<Integer, DroneForServicePoint> spMapDrone,
-            Map<Integer, Drone> droneById,
+            Map<String, Drone> droneById,
             List<List<Coordinate>> restrictedPolys,
             List<BoundBox> boxes,
             MedDispatchRec r,
@@ -37,7 +37,7 @@ public class DeliveryPlanner {
 
     public static FlightBuilder openNewFlight(
             List<ServicePoint> spCandidates,
-            Map<Integer, Drone> droneById,
+            Map<String, Drone> droneById,
             Map<Integer, DroneForServicePoint> spMapDrone,
             MedDispatchRec rec, List<List<Coordinate>> restrictedPolys,
             List<BoundBox> boxes, LocalDate day) {
@@ -46,7 +46,7 @@ public class DeliveryPlanner {
         spCandidates.sort(Comparator.comparingDouble(
                 sp -> GeoUtilities.distanceBetween(sp.getLocation(), target)));
         for (ServicePoint sp : spCandidates) {
-            List<Integer> availableDroneIds = QueryDroneHelper.
+            List<String> availableDroneIds = QueryDroneHelper.
                     feasibleDroneIdsAtSP(spMapDrone.get(sp.getId()),
                             droneById, rec, day);
             if (availableDroneIds.isEmpty())
@@ -60,10 +60,10 @@ public class DeliveryPlanner {
             // Same path to return if only one delivery
             // +1 for hover
             int neededStepsNow = fSteps + fSteps + 1;
-            int bestDroneId = -1;
+            String bestDroneId = null;
             double bestEstCost = (rec.getRequirements().getMaxCost() == null) ?
                     Double.MAX_VALUE : rec.getRequirements().getMaxCost();
-            for (Integer id : availableDroneIds) {
+            for (String id : availableDroneIds) {
                 Drone d = droneById.get(id);
                 var cap = d.getCapability();
                 if (neededStepsNow > cap.getMaxMoves()) continue;
@@ -75,7 +75,7 @@ public class DeliveryPlanner {
                     bestDroneId = d.getId();
                 }
             }
-            if (bestDroneId < 0) continue;
+            if (bestDroneId == null) continue;
 
             Drone d = droneById.get(bestDroneId);
             var cap = d.getCapability();
@@ -101,7 +101,7 @@ public class DeliveryPlanner {
 
     public static boolean tryMergeFlight(MedDispatchRec rec,
                                   List<FlightBuilder> actives, List<FlightBuilder> finished,
-                                  Map<Integer, Drone> droneById,
+                                  Map<String, Drone> droneById,
                                   Map<Integer, DroneForServicePoint> spMapDrone,
                                   List<List<Coordinate>> restrictedPolys,
                                   List<BoundBox> boxes,

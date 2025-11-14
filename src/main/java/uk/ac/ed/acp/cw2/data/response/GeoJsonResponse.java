@@ -21,7 +21,7 @@ public class GeoJsonResponse {
     @Setter
     @NoArgsConstructor
     public static class Properties {
-        private Integer droneId;
+        private String droneId;
     }
 
     @Getter

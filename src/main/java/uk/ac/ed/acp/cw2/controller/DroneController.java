@@ -35,7 +35,7 @@ public class DroneController {
      * - Returns 200 OK with a JSON array of matching drone IDs.
      */
     @GetMapping("/dronesWithCooling/{state}")
-    public List<Integer> dronesWithCooling(@PathVariable Boolean state) {
+    public List<String> dronesWithCooling(@PathVariable Boolean state) {
         return droneService.getDronesWithCooling(state);
     }
 
@@ -47,7 +47,7 @@ public class DroneController {
      * - Returns 404 Not Found if no drone matches the given ID.
      */
     @GetMapping("/droneDetails/{id}")
-    public ResponseEntity<Drone> droneDetails(@PathVariable Integer id) {
+    public ResponseEntity<Drone> droneDetails(@PathVariable String id) {
         Drone drone = droneService.getDroneDetails(id);
         if (drone == null) {
             return ResponseEntity.notFound().build();
@@ -61,7 +61,7 @@ public class DroneController {
      * - Returns 200 OK with a JSON array of matching drone IDs.
      */
     @GetMapping("/queryAsPath/{attribute}/{value}")
-    public List<Integer> queryAsPath(@PathVariable String attribute, @PathVariable String value) {
+    public List<String> queryAsPath(@PathVariable String attribute, @PathVariable String value) {
         return droneService.getDronesByAttribute(attribute,value);
     }
 
@@ -71,7 +71,7 @@ public class DroneController {
      * - Returns 200 OK with a JSON array of matching drone IDs.
      */
     @PostMapping("/query")
-    public List<Integer> query(@RequestBody List<QueryCondition> conditions) {
+    public List<String> query(@RequestBody List<QueryCondition> conditions) {
         return droneService.queryByAttributes(conditions);
     }
 
@@ -81,7 +81,7 @@ public class DroneController {
      * - Returns 200 OK with a JSON array of available drone IDs.
      */
     @PostMapping("/queryAvailableDrones")
-    public List<Integer> queryAvailableDrones(@RequestBody List<MedDispatchRec> dispatches) {
+    public List<String> queryAvailableDrones(@RequestBody List<MedDispatchRec> dispatches) {
         return droneService.queryAvailableDrones(dispatches);
     }
 

@@ -21,7 +21,7 @@ public class DroneForServicePoint {
     @NoArgsConstructor
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Item {
-        private int id; // droneId
+        private String id; // droneId
         private List<Availability> availability;
     }
 

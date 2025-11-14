@@ -16,7 +16,7 @@ public class QueryDroneHelper {
     public static boolean matches(Drone d, String attr, String val) {
         try {
             return switch (attr.toLowerCase()) {
-                case "id" -> d.getId() == Integer.parseInt(val);
+                case "id" -> d.getId().equals(val);
                 case "name" -> d.getName().equalsIgnoreCase(val);
                 case "cooling" -> d.getCapability().isCooling() == Boolean.parseBoolean(val);
                 case "heating" -> d.getCapability().isHeating() == Boolean.parseBoolean(val);
@@ -61,7 +61,6 @@ public class QueryDroneHelper {
     public static boolean compareNumeric(Drone d, String attr, String op, String val) {
         try {
             double droneVal = switch (attr.toLowerCase()) {
-                case "id" -> d.getId();
                 case "capacity" -> d.getCapability().getCapacity();
                 case "maxmoves" -> d.getCapability().getMaxMoves();
                 case "costpermove" -> d.getCapability().getCostPerMove();
@@ -83,9 +82,9 @@ public class QueryDroneHelper {
     }
 
     // Builds an index of availability windows: droneId -> list of [from, until] time windows.
-    public static Map<Integer, List<DroneForServicePoint.Availability>>
+    public static Map<String, List<DroneForServicePoint.Availability>>
     buildAvailabilityIndex(List<DroneForServicePoint> dfspList) {
-        Map<Integer, List<DroneForServicePoint.Availability>> map = new HashMap<>();
+        Map<String, List<DroneForServicePoint.Availability>> map = new HashMap<>();
         if (dfspList == null) return map;
 
         for (DroneForServicePoint sp : dfspList) {
@@ -102,11 +101,11 @@ public class QueryDroneHelper {
     }
 
     // Builds an index of servicPoint: droneId -> list of servicePoint it available.
-    public static Map<Integer, List<ServicePoint>> buildHomePointIndex(
+    public static Map<String, List<ServicePoint>> buildHomePointIndex(
             List<DroneForServicePoint> dfspList,
             List<ServicePoint> servicePoints) {
 
-        Map<Integer, List<ServicePoint>> map = new HashMap<>();
+        Map<String, List<ServicePoint>> map = new HashMap<>();
         if (dfspList == null || servicePoints == null) return map;
 
         Map<Integer, ServicePoint> spById = new HashMap<>();
@@ -249,15 +248,15 @@ public class QueryDroneHelper {
 
     // From a service point entry,
     // collect drone IDs that can execute a given dispatch on a given day.
-    public static List<Integer> feasibleDroneIdsAtSP(
+    public static List<String> feasibleDroneIdsAtSP(
             DroneForServicePoint spEntry,
-            Map<Integer, Drone> droneById,
+            Map<String, Drone> droneById,
             MedDispatchRec rec,
             LocalDate day
     ) {
         if (spEntry == null || spEntry.getDrones() == null || droneById == null || rec == null)
             return List.of();
-        List<Integer> res = new ArrayList<>();
+        List<String> res = new ArrayList<>();
         for (DroneForServicePoint.Item di : spEntry.getDrones()) {
             if (di == null) continue;
             Drone d = droneById.get(di.getId());

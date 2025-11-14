@@ -10,6 +10,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 // Helper utilities used by the delivery planning logic.
 public class DeliveryPlanHelper {
@@ -159,10 +160,10 @@ public class DeliveryPlanHelper {
     }
 
     // Find the DroneForServicePoint.Item entry for a given drone ID in a service point.
-    public static DroneForServicePoint.Item findDroneItem(DroneForServicePoint dfsp, int droneId) {
+    public static DroneForServicePoint.Item findDroneItem(DroneForServicePoint dfsp, String droneId) {
         if (dfsp == null) return null;
         for (DroneForServicePoint.Item item : dfsp.getDrones()) {
-            if (item.getId() == droneId) return item;
+            if (Objects.equals(item.getId(), droneId)) return item;
         }
         return null;
     }

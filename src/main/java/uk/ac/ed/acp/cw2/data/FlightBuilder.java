@@ -14,7 +14,7 @@ import java.util.List;
 @Getter
 @Setter
 public class FlightBuilder {
-    final int droneId;
+    final String droneId;
     final ServicePoint servicePoint;
     final double capacity;
     final int maxMoves;
@@ -38,7 +38,7 @@ public class FlightBuilder {
     List<CalcDeliveryPathResponse.DeliverySegment> segments = new ArrayList<>();
 
     // Construct a new builder for a drone’s initial flight plan.
-    public FlightBuilder(int droneId, ServicePoint sp, double capacity, int maxMoves,
+    public FlightBuilder(String droneId, ServicePoint sp, double capacity, int maxMoves,
                          double cpm, double ci, double cf,
                          MedDispatchRec first) {
         this.droneId = droneId;
@@ -82,8 +82,12 @@ public class FlightBuilder {
     // the drone’s journey back to the service point.
     public void addReturn(List<Coordinate> back, int steps) {
         if (!segments.isEmpty()) {
-            var lastPath = segments.getLast().getFlightPath();
-            for (int i = 1; i < back.size(); i++) lastPath.add(back.get(i));
+            var seg = new CalcDeliveryPathResponse.DeliverySegment();
+            seg.setDeliveryId(null);
+            seg.setFlightPath(back);
+            segments.add(seg);
+            // var lastPath = segments.getLast().getFlightPath();
+            // for (int i = 1; i < back.size(); i++) lastPath.add(back.get(i));
         }
         this.stepsUsed += steps;
         this.end = back.getLast();
