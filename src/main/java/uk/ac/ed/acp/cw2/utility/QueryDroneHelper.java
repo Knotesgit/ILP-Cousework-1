@@ -148,13 +148,11 @@ public class QueryDroneHelper {
             if (req.isCooling() && !cap.isCooling()) return false;
             if (req.isHeating() && !cap.isHeating()) return false;
             if (!isAvailableAt(windows, rec.getDate(), rec.getTime())) return false;
-
             if (req.getMaxCost() != null)
                 hasAnyMaxCost = true;
         }
         if (totalRequired > cap.getCapacity()) return false;
         if (!hasAnyMaxCost) return true;
-
         return respectsMaxCost(cap, homePoints, dispatches, numOfDeliveries);
     }
 
@@ -189,61 +187,6 @@ public class QueryDroneHelper {
             }
         }
         return false;
-    }
-
-    private static boolean respectsMaxCost(Drone.DroneCapability cap,
-                                    List<ServicePoint> homePoints,
-                                    List<MedDispatchRec> dispatches,
-                                    int numOfDeliveries) {
-
-        double bestMoves = Double.POSITIVE_INFINITY;
-
-        // Try each service point as base, keep the cheapest approximate route
-        for (ServicePoint sp : homePoints) {
-            if (sp == null || sp.getLocation() == null) continue;
-
-            Coordinate curr = sp.getLocation();
-            double moves = 0.0;
-
-            for (MedDispatchRec rec : dispatches) {
-                Coordinate target = rec.getDelivery();
-                if (target == null) return false;
-
-                double dist = GeoUtilities.distanceBetween(curr, target);
-                moves += dist / STEP;
-                // Hover for delivery (two identical coordinates)
-                moves += 1.0;
-
-                curr = target;
-            }
-
-            // Last delivery -> base
-            double backDist = GeoUtilities.distanceBetween(curr, sp.getLocation());
-            moves += backDist / STEP;
-
-            if (moves < bestMoves) {
-                bestMoves = moves;
-            }
-        }
-
-        if (bestMoves == Double.POSITIVE_INFINITY) return false;
-
-        double fixed = cap.getCostInitial() + cap.getCostFinal();
-        // Use floor to stay close to an integer move count
-        double moveCount = Math.floor(bestMoves);
-        double totalCostApprox = fixed + moveCount * cap.getCostPerMove();
-        double avgCostPerDelivery = totalCostApprox / numOfDeliveries;
-
-        // Pro-rata cost must satisfy all maxCost constraints
-        for (MedDispatchRec rec : dispatches) {
-            var req = rec.getRequirements();
-            Double maxCost = (req != null) ? req.getMaxCost() : null;
-            if (maxCost != null && avgCostPerDelivery > maxCost) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     // From a service point entry,
@@ -289,6 +232,52 @@ public class QueryDroneHelper {
                 (atSP == null) ? null : atSP.getAvailability();
 
         return QueryDroneHelper.isAvailableAt(windows,day,t);
+    }
+
+    // Helper function : conservative max-cost check
+    private static boolean respectsMaxCost(Drone.DroneCapability cap,
+                                           List<ServicePoint> homePoints,
+                                           List<MedDispatchRec> dispatches,
+                                           int numOfDeliveries) {
+
+        if (numOfDeliveries <= 0)
+            return false;
+        double bestMovesUpperBound = Double.POSITIVE_INFINITY;
+
+        // Try each service point as a possible base and keep the cheapest
+        // conservative (upper-bound) estimate.
+        for (ServicePoint sp : homePoints) {
+            if (sp == null || sp.getLocation() == null)
+                continue;
+            Coordinate base = sp.getLocation();
+            double movesForThisBase = 0.0;
+            // For this base, assume each dispatch is handled by a separate
+            for (MedDispatchRec rec : dispatches) {
+                var req = rec.getRequirements();
+                Coordinate target = rec.getDelivery();
+                if (target == null) return false;
+                double dist = GeoUtilities.distanceBetween(base, target);
+                //   base -> target -> base  (two legs)
+                double roundTripMoves = 2.0 * (dist / STEP);
+                roundTripMoves += 1.0;
+                movesForThisBase += roundTripMoves;
+            }
+            if (movesForThisBase < bestMovesUpperBound)
+                bestMovesUpperBound = movesForThisBase;
+        }
+        if (bestMovesUpperBound == Double.POSITIVE_INFINITY)
+            return false;
+        double fixed = cap.getCostInitial() + cap.getCostFinal();
+        double moveCount = Math.floor(bestMovesUpperBound);
+        double totalCostApprox = fixed + moveCount * cap.getCostPerMove();
+        double avgCostPerDelivery = totalCostApprox / numOfDeliveries;
+        for (MedDispatchRec rec : dispatches) {
+            var req = rec.getRequirements();
+            Double maxCost = (req != null) ? req.getMaxCost() : null;
+            if (maxCost != null && avgCostPerDelivery > maxCost)
+                return false;
+        }
+        return true;
     }
 
     // Parse English day-of-week string into DayOfWeek
