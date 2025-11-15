@@ -14,14 +14,23 @@ public class GeoUtilities {
     private static final double EPSILON = 1e-12;
 
     // Prevent memory explosion and infinite expansion in A* search
-    private static final int EXPANSION_CAP = 250_000;
+    private static final int EXPANSION_CAP = 1_000_000;
 
     // 16 directions
     private static final double[] ANGLES =
             java.util.stream.IntStream.range(0, 16)
                     .mapToDouble(i -> i * 22.5)
                     .toArray();
+    private static final double[] DX = new double[16];
+    private static final double[] DY = new double[16];
 
+    static {
+        for (int i = 0; i < 16; i++) {
+            double rad = Math.toRadians(i * 22.5); // 0, 22.5, 45, ...
+            DX[i] = STEP * Math.cos(rad);
+            DY[i] = STEP * Math.sin(rad);
+        }
+    }
     public static boolean isNear(Coordinate pos1, Coordinate pos2) {
         return ((distanceBetween(pos1, pos2) + EPSILON) < 0.00015);
     }
@@ -110,14 +119,20 @@ public class GeoUtilities {
         while (!open.isEmpty()) {
             // Exit if explored too many node;
             expansions++;
-            if (expansions > EXPANSION_CAP) return List.of();
+            if (expansions > EXPANSION_CAP) {
+                return List.of();
+            }
             Node cur = open.poll();
 
             if (isNear(cur.getP(), goal)) {
                 return PathFindingHelper.reconstruct(cur);
             }
-            for (double ang : ANGLES) {
-                Coordinate rawNext = nextPosition(cur.getP(), ang);
+            for (int dir = 0; dir < DX.length; dir++) {
+                Coordinate p0 = cur.getP();
+                Coordinate rawNext = new Coordinate(
+                        p0.getLng() + DX[dir],
+                        p0.getLat() + DY[dir]
+                );
                 Coordinate nxt = PathFindingHelper.normalize(rawNext);
                 // Obstacle check for this step
                 if (PathFindingHelper.stepBlocked(cur.getP(), nxt, rects, rectBoxes)) continue;

@@ -85,10 +85,11 @@ public class PathFindingHelper {
 
             if (!triggerByBoxOR(from, to, box)) continue;
 
-            if (GeoUtilities.isPointInRegion(from, poly) ||GeoUtilities.isPointInRegion(to, poly)) return true;
+            if (GeoUtilities.isPointInRegion(to, poly)) return true;
 
             for (int i = 0; i < poly.size() - 1; i++){
-                if (GeoUtilities.segmentsIntersect(from, to, poly.get(i), poly.get(i+1))) return true;
+                if (GeoUtilities.segmentsIntersect(from, to, poly.get(i), poly.get(i+1)))
+                    return true;
             }
         }
         return false;

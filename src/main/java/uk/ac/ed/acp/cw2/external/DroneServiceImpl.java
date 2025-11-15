@@ -191,44 +191,45 @@ public class DroneServiceImpl implements DroneService {
         List<String> availableDrones = queryAvailableDrones(recs);
         if(availableDrones == null || availableDrones.isEmpty())
             return DeliveryPlanHelper.emptyGeoJsonResponse();
-        Set<String> allow = new HashSet<>(availableDrones);
-        droneById.keySet().retainAll(allow);
-        if (droneById.isEmpty()) return DeliveryPlanHelper.emptyGeoJsonResponse();
 
-        // Dispatch in time order.
-        recs.sort(Comparator.comparing(MedDispatchRec::getTime).thenComparing(MedDispatchRec::getId));
+        for(String droneId:availableDrones){
+            Drone drone = droneById.get(droneId);
+            if (drone == null) continue;
+            Map<String, Drone> singleDroneMap = Collections.singletonMap(droneId, drone);
 
-        FlightBuilder fb = DeliveryPlanner.openNewFlight(
-                servicePts, droneById, spMapDrone,
-                recs.get(0), restrictedPolys, BBoxes, recs.get(0).getDate()
-        );
+            FlightBuilder fb = DeliveryPlanner.openNewFlight(servicePts, singleDroneMap, spMapDrone,
+                    recs.get(0), restrictedPolys, BBoxes, date);
+            if(fb == null) continue;
 
-        if (fb == null) return DeliveryPlanHelper.emptyGeoJsonResponse();
-        List<FlightBuilder> activeFlights = new ArrayList<>();
-        List<FlightBuilder> finishedFlights = new ArrayList<>();
-        activeFlights.add(fb);
+            List<FlightBuilder> activeFlights = new ArrayList<>();
+            List<FlightBuilder> finishedFlights = new ArrayList<>();
+            activeFlights.add(fb);
 
-        boolean ok = true;
-        for (int i = 1; i < recs.size(); i++) {
-            boolean merged = DeliveryPlanner.tryMergeFlight(
-                    recs.get(i), activeFlights, finishedFlights,
-                    droneById, spMapDrone, restrictedPolys, BBoxes,
-                    recs.get(i).getDate()
-            );
-            if (!merged) {
-                ok = false;
-                break; }
+            boolean ok = true;
+            for (int i = 1; i < recs.size(); i++) {
+                MedDispatchRec rec = recs.get(i);
+                boolean merged = DeliveryPlanner.tryMergeFlight(rec, activeFlights, finishedFlights,
+                        singleDroneMap, spMapDrone, restrictedPolys, BBoxes, rec.getDate());
+                if (!merged) {
+                    ok = false;
+                    break;
+                }
+            }
+            if (!ok) continue;
+
+            if (activeFlights.size() != 1) continue;
+
+            DeliveryPlanner.closeFlight(activeFlights.get(0), finishedFlights, restrictedPolys, BBoxes);
+            if (finishedFlights.size() != 1) {
+                continue;
+            }
+            FlightBuilder resultFlight = finishedFlights.get(0);
+            if (resultFlight.getDeliveryCount() != recs.size())
+                continue;
+
+            return DeliveryPlanHelper.buildGeoJsonResponse(resultFlight);
         }
-
-        if (!ok)
-            return DeliveryPlanHelper.emptyGeoJsonResponse();
-        if (activeFlights.size() != 1)
-            return DeliveryPlanHelper.emptyGeoJsonResponse();
-        DeliveryPlanner.closeFlight(activeFlights.get(0), finishedFlights, restrictedPolys, BBoxes);
-        if (finishedFlights.size() != 1 ||
-                finishedFlights.get(0).getDeliveryCount() != recs.size())
-            return DeliveryPlanHelper.emptyGeoJsonResponse();
-        return DeliveryPlanHelper.buildGeoJsonResponse(finishedFlights.get(0));
+        return DeliveryPlanHelper.emptyGeoJsonResponse();
     }
 
 }
