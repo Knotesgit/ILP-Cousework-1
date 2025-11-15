@@ -87,10 +87,22 @@ public class PathFindingHelper {
 
             if (GeoUtilities.isPointInRegion(to, poly)) return true;
 
+            if(!nearAnyVertex(from,to,poly)) continue;
+
             for (int i = 0; i < poly.size() - 1; i++){
                 if (GeoUtilities.segmentsIntersect(from, to, poly.get(i), poly.get(i+1)))
                     return true;
             }
+        }
+        return false;
+    }
+
+    private static boolean nearAnyVertex(Coordinate from, Coordinate to,
+            List<Coordinate> poly) {
+        for (int i = 0; i < poly.size() - 1; i++) {
+            var v = poly.get(i);
+            if(GeoUtilities.isNear(v,from) || GeoUtilities.isNear(v,to))
+                return true;
         }
         return false;
     }
