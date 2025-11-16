@@ -16,24 +16,64 @@ public class PathFindingHelper {
     // Tolerance for floating-point comparisons
     private static final double EPSILON = 1e-12;
 
-    // Quantization scale used to normalize floating values into integer keys
-    private static final long Q = 10_000_000L;
+//    // Quantization scale used to normalize floating values into integer keys
+//    private static final long Q = 10_000_000L;
 
-    // Quantize longitude to a long integer by multiplying with link Q
-    public static long qlng(double x) {
-        return Math.round(x * Q);
-    }
-
-    // Quantize latitude to a long integer by multiplying with link Q
-    public static long qlat(double y) {
-        return Math.round(y * Q);
-    }
+//    // Quantize longitude to a long integer by multiplying with link Q
+//
+//    public static long qlng(double x) {
+//        return Math.round(x * Q);
+//    }
+//
+//    // Quantize latitude to a long integer by multiplying with link Q
+//    public static long qlat(double y) {
+//        return Math.round(y * Q);
+//    }
 
     // Admissible heuristic: optimistic step count = floor(distance / STEP)
     public static int heuristic(Coordinate a, Coordinate b){
         double d = GeoUtilities.distanceBetween(a,b);
         return (int) Math.floor(d / STEP);
     }
+
+    // Quantize longitude to a long integer by divide it with STEP
+    public static long gx(Coordinate c) {
+        return Math.round(c.getLng() / STEP);
+    }
+
+    // Quantize latitude to a long integer by divide it with STEP
+    public static long gy(Coordinate c) {
+        return Math.round(c.getLat() / STEP);
+    }
+
+//    // Generate a unique key string for a coordinate based on quantized values.
+//    public static String keyOf(Coordinate c) {
+//        long x = qlng(c.getLng());
+//        long y = qlat(c.getLat());
+//        return x + "," + y;
+//    }
+//
+//    // Normalize a coordinate to the quantized grid.
+//    public static Coordinate normalize(Coordinate c) {
+//        double nx = ((double) qlng(c.getLng())) / Q;
+//        double ny = ((double) qlat(c.getLat())) / Q;
+//        return new Coordinate(nx, ny);
+//    }
+
+
+    // Key based on step grid
+    public static String keyOf(Coordinate c) {
+        long ix = gx(c);
+        long iy = gy(c);
+        return ix + "," + iy;
+    }
+
+//    public static Coordinate normalize(Coordinate c) {
+//        long ix = Math.round(c.getLng() / STEP);
+//        long iy = Math.round(c.getLat() / STEP);
+//        return new Coordinate(ix * STEP, iy * STEP);
+//    }
+
 
     // Helper to check whether a value line between higher and lower bound
     public static boolean axisHits(double val, double low, double high) {
@@ -50,26 +90,50 @@ public class PathFindingHelper {
         return xHit || yHit;
     }
 
-    // Generate a unique key string for a coordinate based on quantized values.
-    public static String keyOf(Coordinate c) {
-        long x = qlng(c.getLng());
-        long y = qlat(c.getLat());
-        return x + "," + y;
-    }
-
-    // Normalize a coordinate to the quantized grid.
-    public static Coordinate normalize(Coordinate c) {
-        double nx = ((double) qlng(c.getLng())) / Q;
-        double ny = ((double) qlat(c.getLat())) / Q;
-        return new Coordinate(nx, ny);
-    }
-
     // Reconstruct the full coordinate path by following parent pointers.
     public static List<Coordinate> reconstruct(Node t) {
         ArrayDeque<Coordinate> s = new ArrayDeque<>();
         for (Node p = t; p != null; p = p.getParent())
             s.push(p.getP());
         return new ArrayList<>(s);
+    }
+
+    public static BoundBox computeGlobalBoundBox(Coordinate start, Coordinate goal,
+            List<BoundBox> rectBoxes) {
+        double minX = Math.min(start.getLng(), goal.getLng());
+        double maxX = Math.max(start.getLng(), goal.getLng());
+        double minY = Math.min(start.getLat(),  goal.getLat());
+        double maxY = Math.max(start.getLat(),  goal.getLat());
+
+        // Merge all restricted area bound boxes
+        if (rectBoxes != null) {
+            for (BoundBox b : rectBoxes) {
+                if (b == null || b.getMin() == null || b.getMax() == null) continue;
+
+                minX = Math.min(minX, b.getMin().getLng());
+                minY = Math.min(minY, b.getMin().getLat());
+                maxX = Math.max(maxX, b.getMax().getLng());
+                maxY = Math.max(maxY, b.getMax().getLat());
+            }
+        }
+
+        // Add a modest margin to allow small detours outside strict hull.
+        double margin = 40 * STEP; // 40 steps ~ 0.006 degrees
+
+        return new BoundBox(
+                new Coordinate(maxX + margin, maxY + margin),
+                new Coordinate(minX - margin, minY - margin)
+        );
+    }
+
+    // Returns true if coordinate c lies inside the given bounding box (inclusive).
+    public static boolean insideBox(Coordinate c, BoundBox box) {
+        double x = c.getLng();
+        double y = c.getLat();
+        return x >= box.getMin().getLng() &&
+                x <= box.getMax().getLng() &&
+                y >= box.getMin().getLat() &&
+                y <= box.getMax().getLat();
     }
 
     // Determine if a single movement step intersects any restricted polygon.
@@ -106,4 +170,5 @@ public class PathFindingHelper {
         }
         return false;
     }
+
 }

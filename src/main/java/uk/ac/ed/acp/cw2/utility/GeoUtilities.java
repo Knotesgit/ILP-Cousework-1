@@ -98,8 +98,8 @@ public class GeoUtilities {
     public static List<Coordinate> pathBetween(
             Coordinate start, Coordinate goal,
             List<List<Coordinate>> rects, List<BoundBox> rectBoxes) {
-        start = PathFindingHelper.normalize(start);
-        goal  = PathFindingHelper.normalize(goal);
+        //start = PathFindingHelper.normalize(start);
+        //goal  = PathFindingHelper.normalize(goal);
         // Early exit if start or goal lies within any restricted area
         if (rects != null && !rects.isEmpty()){
             for(List<Coordinate> poly: rects){
@@ -107,6 +107,9 @@ public class GeoUtilities {
                     return List.of();
             }
         }
+        // Compute global search bound
+        BoundBox global = PathFindingHelper.computeGlobalBoundBox(start, goal, rectBoxes);
+
         Map<String, Integer> bestG = new HashMap<>();
         PriorityQueue<Node> open = new PriorityQueue<>(Comparator.comparingInt(Node::getF));
         // Seed start node
@@ -117,23 +120,30 @@ public class GeoUtilities {
         int expansions = 0;
         // Main A* loop
         while (!open.isEmpty()) {
+            Node cur = open.poll();
+            String kCur = PathFindingHelper.keyOf(cur.getP());
+            Integer best = bestG.get(kCur);
+            if (best != null && best < cur.getG()) continue;
+
+            if (isNear(cur.getP(), goal))
+                return PathFindingHelper.reconstruct(cur);
+
             // Exit if explored too many node;
             expansions++;
             if (expansions > EXPANSION_CAP) {
+                System.out.println("Expand too much");
                 return List.of();
             }
-            Node cur = open.poll();
 
-            if (isNear(cur.getP(), goal)) {
-                return PathFindingHelper.reconstruct(cur);
-            }
             for (int dir = 0; dir < DX.length; dir++) {
                 Coordinate p0 = cur.getP();
-                Coordinate rawNext = new Coordinate(
+                Coordinate nxt = new Coordinate(
                         p0.getLng() + DX[dir],
                         p0.getLat() + DY[dir]
                 );
-                Coordinate nxt = PathFindingHelper.normalize(rawNext);
+                //Coordinate nxt = PathFindingHelper.normalize(rawNext);
+                if (!PathFindingHelper.insideBox(nxt, global)) continue;
+
                 // Obstacle check for this step
                 if (PathFindingHelper.stepBlocked(cur.getP(), nxt, rects, rectBoxes)) continue;
                 int ng = cur.getG() + 1;
@@ -146,6 +156,7 @@ public class GeoUtilities {
                 open.add(nn);
             }
         }
+        System.out.println("out of open");
         return List.of();
     }
 
