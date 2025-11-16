@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PathFindingHelper.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">IlpTutorial1</a> &gt; <a href="index.source.html" class="el_package">uk.ac.ed.acp.cw2.utility</a> &gt; <span class="el_source">PathFindingHelper.java</span></div><h1>PathFindingHelper.java</h1><pre class="source lang-java linenums">package uk.ac.ed.acp.cw2.utility;
+
+import uk.ac.ed.acp.cw2.data.BoundBox;
+import uk.ac.ed.acp.cw2.data.Coordinate;
+import uk.ac.ed.acp.cw2.data.Node;
+
+
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.List;
+
+// Helper utilities used by the path finding logic.
+<span class="nc" id="L13">public class PathFindingHelper {</span>
+    private static final double STEP = 0.00015;
+
+    // Tolerance for floating-point comparisons
+    private static final double EPSILON = 1e-12;
+
+//    // Quantization scale used to normalize floating values into integer keys
+//    private static final long Q = 10_000_000L;
+
+//    // Quantize longitude to a long integer by multiplying with link Q
+//
+//    public static long qlng(double x) {
+//        return Math.round(x * Q);
+//    }
+//
+//    // Quantize latitude to a long integer by multiplying with link Q
+//    public static long qlat(double y) {
+//        return Math.round(y * Q);
+//    }
+
+    // Admissible heuristic: optimistic step count = floor(distance / STEP)
+    public static int heuristic(Coordinate a, Coordinate b){
+<span class="fc" id="L35">        double d = GeoUtilities.distanceBetween(a,b);</span>
+<span class="fc" id="L36">        return (int) Math.floor(d / STEP);</span>
+    }
+
+    // Quantize longitude to a long integer by divide it with STEP
+    public static long gx(Coordinate c) {
+<span class="fc" id="L41">        return Math.round(c.getLng() / STEP);</span>
+    }
+
+    // Quantize latitude to a long integer by divide it with STEP
+    public static long gy(Coordinate c) {
+<span class="fc" id="L46">        return Math.round(c.getLat() / STEP);</span>
+    }
+
+//    // Generate a unique key string for a coordinate based on quantized values.
+//    public static String keyOf(Coordinate c) {
+//        long x = qlng(c.getLng());
+//        long y = qlat(c.getLat());
+//        return x + &quot;,&quot; + y;
+//    }
+//
+//    // Normalize a coordinate to the quantized grid.
+//    public static Coordinate normalize(Coordinate c) {
+//        double nx = ((double) qlng(c.getLng())) / Q;
+//        double ny = ((double) qlat(c.getLat())) / Q;
+//        return new Coordinate(nx, ny);
+//    }
+
+
+    // Key based on step grid
+    public static String keyOf(Coordinate c) {
+<span class="fc" id="L66">        long ix = gx(c);</span>
+<span class="fc" id="L67">        long iy = gy(c);</span>
+<span class="fc" id="L68">        return ix + &quot;,&quot; + iy;</span>
+    }
+
+//    public static Coordinate normalize(Coordinate c) {
+//        long ix = Math.round(c.getLng() / STEP);
+//        long iy = Math.round(c.getLat() / STEP);
+//        return new Coordinate(ix * STEP, iy * STEP);
+//    }
+
+
+    // Helper to check whether a value line between higher and lower bound
+    public static boolean axisHits(double val, double low, double high) {
+<span class="fc bfc" id="L80" title="All 4 branches covered.">        return (val &gt;= low - EPSILON) &amp;&amp; (val &lt;= high + EPSILON);</span>
+    }
+
+    // Fast bounding-box prefilter.
+    // Returns true if at least one endpoint of segment (a,b) lies inside or near the bounding box.
+    public static boolean triggerByBoxOR(Coordinate a, Coordinate b, BoundBox box) {
+<span class="fc bfc" id="L86" title="All 2 branches covered.">        boolean xHit = axisHits(a.getLng(), box.getMin().getLng(), box.getMax().getLng())</span>
+<span class="fc bfc" id="L87" title="All 2 branches covered.">                || axisHits(b.getLng(), box.getMin().getLng(), box.getMax().getLng());</span>
+<span class="fc bfc" id="L88" title="All 2 branches covered.">        boolean yHit = axisHits(a.getLat(), box.getMin().getLat(), box.getMax().getLat())</span>
+<span class="fc bfc" id="L89" title="All 2 branches covered.">                || axisHits(b.getLat(), box.getMin().getLat(), box.getMax().getLat());</span>
+<span class="fc bfc" id="L90" title="All 4 branches covered.">        return xHit || yHit;</span>
+    }
+
+    // Reconstruct the full coordinate path by following parent pointers.
+    public static List&lt;Coordinate&gt; reconstruct(Node t) {
+<span class="fc" id="L95">        ArrayDeque&lt;Coordinate&gt; s = new ArrayDeque&lt;&gt;();</span>
+<span class="fc bfc" id="L96" title="All 2 branches covered.">        for (Node p = t; p != null; p = p.getParent())</span>
+<span class="fc" id="L97">            s.push(p.getP());</span>
+<span class="fc" id="L98">        return new ArrayList&lt;&gt;(s);</span>
+    }
+
+    public static BoundBox computeGlobalBoundBox(Coordinate start, Coordinate goal,
+            List&lt;BoundBox&gt; rectBoxes) {
+<span class="fc" id="L103">        double minX = Math.min(start.getLng(), goal.getLng());</span>
+<span class="fc" id="L104">        double maxX = Math.max(start.getLng(), goal.getLng());</span>
+<span class="fc" id="L105">        double minY = Math.min(start.getLat(),  goal.getLat());</span>
+<span class="fc" id="L106">        double maxY = Math.max(start.getLat(),  goal.getLat());</span>
+
+        // Merge all restricted area bound boxes
+<span class="fc bfc" id="L109" title="All 2 branches covered.">        if (rectBoxes != null) {</span>
+<span class="fc bfc" id="L110" title="All 2 branches covered.">            for (BoundBox b : rectBoxes) {</span>
+<span class="pc bpc" id="L111" title="3 of 6 branches missed.">                if (b == null || b.getMin() == null || b.getMax() == null) continue;</span>
+
+<span class="fc" id="L113">                minX = Math.min(minX, b.getMin().getLng());</span>
+<span class="fc" id="L114">                minY = Math.min(minY, b.getMin().getLat());</span>
+<span class="fc" id="L115">                maxX = Math.max(maxX, b.getMax().getLng());</span>
+<span class="fc" id="L116">                maxY = Math.max(maxY, b.getMax().getLat());</span>
+<span class="fc" id="L117">            }</span>
+        }
+
+        // Add a modest margin to allow small detours outside strict hull.
+<span class="fc" id="L121">        double margin = 40 * STEP; // 40 steps ~ 0.006 degrees</span>
+
+<span class="fc" id="L123">        return new BoundBox(</span>
+<span class="fc" id="L124">                new Coordinate(maxX + margin, maxY + margin),</span>
+<span class="fc" id="L125">                new Coordinate(minX - margin, minY - margin)</span>
+        );
+    }
+
+    // Returns true if coordinate c lies inside the given bounding box (inclusive).
+    public static boolean insideBox(Coordinate c, BoundBox box) {
+<span class="fc" id="L131">        double x = c.getLng();</span>
+<span class="fc" id="L132">        double y = c.getLat();</span>
+<span class="pc bpc" id="L133" title="1 of 2 branches missed.">        return x &gt;= box.getMin().getLng() &amp;&amp;</span>
+<span class="pc bpc" id="L134" title="1 of 2 branches missed.">                x &lt;= box.getMax().getLng() &amp;&amp;</span>
+<span class="pc bpc" id="L135" title="1 of 2 branches missed.">                y &gt;= box.getMin().getLat() &amp;&amp;</span>
+<span class="pc bpc" id="L136" title="1 of 2 branches missed.">                y &lt;= box.getMax().getLat();</span>
+    }
+
+    // Determine if a single movement step intersects any restricted polygon.
+    public static boolean stepBlocked(Coordinate from, Coordinate to,
+                                      List&lt;List&lt;Coordinate&gt;&gt; rects, List&lt;BoundBox&gt; rectBoxes){
+<span class="pc bpc" id="L142" title="1 of 4 branches missed.">        if(rects == null || rects.isEmpty())</span>
+<span class="fc" id="L143">            return false;</span>
+<span class="pc bpc" id="L144" title="2 of 4 branches missed.">        if(rectBoxes == null || rectBoxes.isEmpty())</span>
+<span class="nc" id="L145">            return false;</span>
+<span class="fc bfc" id="L146" title="All 2 branches covered.">        for (int k = 0; k &lt; rects.size(); k++){</span>
+<span class="fc" id="L147">            var poly = rects.get(k);</span>
+<span class="fc" id="L148">            var box  = rectBoxes.get(k);</span>
+
+<span class="fc bfc" id="L150" title="All 2 branches covered.">            if (!triggerByBoxOR(from, to, box)) continue;</span>
+
+<span class="fc bfc" id="L152" title="All 2 branches covered.">            if (GeoUtilities.isPointInRegion(to, poly)) return true;</span>
+
+<span class="fc bfc" id="L154" title="All 2 branches covered.">            if(!nearAnyVertex(from,to,poly)) continue;</span>
+
+<span class="fc bfc" id="L156" title="All 2 branches covered.">            for (int i = 0; i &lt; poly.size() - 1; i++){</span>
+<span class="fc bfc" id="L157" title="All 2 branches covered.">                if (GeoUtilities.segmentsIntersect(from, to, poly.get(i), poly.get(i+1)))</span>
+<span class="fc" id="L158">                    return true;</span>
+            }
+        }
+<span class="fc" id="L161">        return false;</span>
+    }
+
+    private static boolean nearAnyVertex(Coordinate from, Coordinate to,
+            List&lt;Coordinate&gt; poly) {
+<span class="fc bfc" id="L166" title="All 2 branches covered.">        for (int i = 0; i &lt; poly.size() - 1; i++) {</span>
+<span class="fc" id="L167">            var v = poly.get(i);</span>
+<span class="fc bfc" id="L168" title="All 4 branches covered.">            if(GeoUtilities.isNear(v,from) || GeoUtilities.isNear(v,to))</span>
+<span class="fc" id="L169">                return true;</span>
+        }
+<span class="fc" id="L171">        return false;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

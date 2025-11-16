@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GeoUtilities.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">IlpTutorial1</a> &gt; <a href="index.source.html" class="el_package">uk.ac.ed.acp.cw2.utility</a> &gt; <span class="el_source">GeoUtilities.java</span></div><h1>GeoUtilities.java</h1><pre class="source lang-java linenums">package uk.ac.ed.acp.cw2.utility;
+
+import uk.ac.ed.acp.cw2.data.BoundBox;
+import uk.ac.ed.acp.cw2.data.Coordinate;
+import uk.ac.ed.acp.cw2.data.Node;
+
+import java.util.*;
+
+<span class="nc" id="L9">public class GeoUtilities {</span>
+
+    private static final double STEP = 0.00015;
+
+    // Numerical epsilon for floating-point comparisons only.
+    private static final double EPSILON = 1e-12;
+
+    // Prevent memory explosion and infinite expansion in A* search
+    private static final int EXPANSION_CAP = 1_000_000;
+
+    // 16 directions
+<span class="fc" id="L20">    private static final double[] ANGLES =</span>
+<span class="fc" id="L21">            java.util.stream.IntStream.range(0, 16)</span>
+<span class="fc" id="L22">                    .mapToDouble(i -&gt; i * 22.5)</span>
+<span class="fc" id="L23">                    .toArray();</span>
+<span class="fc" id="L24">    private static final double[] DX = new double[16];</span>
+<span class="fc" id="L25">    private static final double[] DY = new double[16];</span>
+
+    static {
+<span class="fc bfc" id="L28" title="All 2 branches covered.">        for (int i = 0; i &lt; 16; i++) {</span>
+<span class="fc" id="L29">            double rad = Math.toRadians(i * 22.5); // 0, 22.5, 45, ...</span>
+<span class="fc" id="L30">            DX[i] = STEP * Math.cos(rad);</span>
+<span class="fc" id="L31">            DY[i] = STEP * Math.sin(rad);</span>
+        }
+<span class="fc" id="L33">    }</span>
+    public static boolean isNear(Coordinate pos1, Coordinate pos2) {
+<span class="fc bfc" id="L35" title="All 2 branches covered.">        return ((distanceBetween(pos1, pos2) + EPSILON) &lt; 0.00015);</span>
+    }
+
+    public static double distanceBetween(Coordinate pos1, Coordinate pos2) {
+<span class="fc" id="L39">        double dx = pos1.getLng() - pos2.getLng();</span>
+<span class="fc" id="L40">        double dy = pos1.getLat() - pos2.getLat();</span>
+<span class="fc" id="L41">        return Math.sqrt(dx * dx + dy * dy);</span>
+    }
+
+    public static Coordinate nextPosition(Coordinate start, double angle){
+<span class="fc" id="L45">        double rad = Math.toRadians(angle);</span>
+<span class="fc" id="L46">        double dx = STEP * Math.cos(rad);</span>
+<span class="fc" id="L47">        double dy = STEP * Math.sin(rad);</span>
+
+<span class="fc" id="L49">        Coordinate next = new Coordinate();</span>
+<span class="fc" id="L50">        next.setLng(start.getLng() + dx);</span>
+<span class="fc" id="L51">        next.setLat(start.getLat() + dy);</span>
+<span class="fc" id="L52">        return  next;</span>
+    }
+    public static boolean onSegment(Coordinate a, Coordinate p, Coordinate q) {
+        // cross product to test collinearity
+        // 2D cross product (z-component of pq × pa)
+<span class="fc" id="L57">        double cross = (q.getLng()-p.getLng())*(a.getLat()-p.getLat()) - (q.getLat()-p.getLat())*(a.getLng()-p.getLng());</span>
+<span class="fc bfc" id="L58" title="All 2 branches covered.">        if (Math.abs(cross) &gt; EPSILON) return false;</span>
+
+        // bounding box check with tolerance
+<span class="fc bfc" id="L61" title="All 2 branches covered.">        return Math.min(p.getLng(), q.getLng()) - EPSILON &lt;= a.getLng() &amp;&amp;</span>
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">                a.getLng() &lt;= Math.max(p.getLng(), q.getLng()) + EPSILON &amp;&amp;</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">                Math.min(p.getLat(), q.getLat()) - EPSILON &lt;= a.getLat() &amp;&amp;</span>
+<span class="pc bpc" id="L64" title="1 of 2 branches missed.">                a.getLat() &lt;= Math.max(p.getLat(), q.getLat()) + EPSILON;</span>
+    }
+
+    // Check whether a point is in a region
+    public static boolean isPointInRegion(Coordinate p, List&lt;Coordinate&gt; vertices) {
+<span class="fc" id="L69">        int n = vertices.size() - 1; // polygon closed, last == first</span>
+
+        // check boundary and vertices
+<span class="fc bfc" id="L72" title="All 2 branches covered.">        for (int i = 0; i &lt; n; i++) {</span>
+<span class="fc bfc" id="L73" title="All 2 branches covered.">            if (onSegment(p, vertices.get(i), vertices.get(i+1))) return true;</span>
+        }
+
+<span class="fc" id="L76">        boolean inside = false;</span>
+
+<span class="fc bfc" id="L78" title="All 2 branches covered.">        for (int i = 0, j = n - 1; i &lt; n; j = i++) {</span>
+<span class="fc" id="L79">            Coordinate vi = vertices.get(i), vj = vertices.get(j);</span>
+
+            // ray crosses edge in y-range
+<span class="fc bfc" id="L82" title="All 6 branches covered.">            boolean crossesY = (vi.getLat() &gt; p.getLat()) != (vj.getLat() &gt; p.getLat());</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">            if (!crossesY) continue;</span>
+
+            // x-coordinate of intersection
+<span class="fc" id="L86">            double xIntersect = (vj.getLng() - vi.getLng()) * (p.getLat() - vi.getLat())</span>
+<span class="fc" id="L87">                    / (vj.getLat() - vi.getLat()) + vi.getLng();</span>
+
+            // count only if intersection is to the right
+<span class="fc bfc" id="L90" title="All 2 branches covered.">            if (p.getLng() &lt; xIntersect) {</span>
+<span class="fc bfc" id="L91" title="All 2 branches covered.">                inside = !inside;</span>
+            }
+        }
+<span class="fc" id="L94">        return inside;</span>
+    }
+
+    // A* search on a fixed STEP grid with 16-direction branching and Euclidean heuristic.
+    public static List&lt;Coordinate&gt; pathBetween(
+            Coordinate start, Coordinate goal,
+            List&lt;List&lt;Coordinate&gt;&gt; rects, List&lt;BoundBox&gt; rectBoxes) {
+        //start = PathFindingHelper.normalize(start);
+        //goal  = PathFindingHelper.normalize(goal);
+        // Early exit if start or goal lies within any restricted area
+<span class="fc bfc" id="L104" title="All 4 branches covered.">        if (rects != null &amp;&amp; !rects.isEmpty()){</span>
+<span class="fc bfc" id="L105" title="All 2 branches covered.">            for(List&lt;Coordinate&gt; poly: rects){</span>
+<span class="fc bfc" id="L106" title="All 4 branches covered.">                if(isPointInRegion(start, poly) || isPointInRegion(goal, poly))</span>
+<span class="fc" id="L107">                    return List.of();</span>
+<span class="fc" id="L108">            }</span>
+        }
+        // Compute global search bound
+<span class="fc" id="L111">        BoundBox global = PathFindingHelper.computeGlobalBoundBox(start, goal, rectBoxes);</span>
+
+<span class="fc" id="L113">        Map&lt;String, Integer&gt; bestG = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L114">        PriorityQueue&lt;Node&gt; open = new PriorityQueue&lt;&gt;(Comparator.comparingInt(Node::getF));</span>
+        // Seed start node
+<span class="fc" id="L116">        Node s = new Node(start, 0, PathFindingHelper.heuristic(start, goal), null);</span>
+<span class="fc" id="L117">        open.add(s);</span>
+<span class="fc" id="L118">        bestG.put(PathFindingHelper.keyOf(start), 0);</span>
+
+<span class="fc" id="L120">        int expansions = 0;</span>
+        // Main A* loop
+<span class="pc bpc" id="L122" title="1 of 2 branches missed.">        while (!open.isEmpty()) {</span>
+<span class="fc" id="L123">            Node cur = open.poll();</span>
+<span class="fc" id="L124">            String kCur = PathFindingHelper.keyOf(cur.getP());</span>
+<span class="fc" id="L125">            Integer best = bestG.get(kCur);</span>
+<span class="pc bpc" id="L126" title="1 of 4 branches missed.">            if (best != null &amp;&amp; best &lt; cur.getG()) continue;</span>
+
+<span class="fc bfc" id="L128" title="All 2 branches covered.">            if (isNear(cur.getP(), goal))</span>
+<span class="fc" id="L129">                return PathFindingHelper.reconstruct(cur);</span>
+
+            // Exit if explored too many node;
+<span class="fc" id="L132">            expansions++;</span>
+<span class="pc bpc" id="L133" title="1 of 2 branches missed.">            if (expansions &gt; EXPANSION_CAP) {</span>
+<span class="nc" id="L134">                System.out.println(&quot;Expand too much&quot;);</span>
+<span class="nc" id="L135">                return List.of();</span>
+            }
+
+<span class="fc bfc" id="L138" title="All 2 branches covered.">            for (int dir = 0; dir &lt; DX.length; dir++) {</span>
+<span class="fc" id="L139">                Coordinate p0 = cur.getP();</span>
+<span class="fc" id="L140">                Coordinate nxt = new Coordinate(</span>
+<span class="fc" id="L141">                        p0.getLng() + DX[dir],</span>
+<span class="fc" id="L142">                        p0.getLat() + DY[dir]</span>
+                );
+                //Coordinate nxt = PathFindingHelper.normalize(rawNext);
+<span class="pc bpc" id="L145" title="1 of 2 branches missed.">                if (!PathFindingHelper.insideBox(nxt, global)) continue;</span>
+
+                // Obstacle check for this step
+<span class="fc bfc" id="L148" title="All 2 branches covered.">                if (PathFindingHelper.stepBlocked(cur.getP(), nxt, rects, rectBoxes)) continue;</span>
+<span class="fc" id="L149">                int ng = cur.getG() + 1;</span>
+<span class="fc" id="L150">                String k = PathFindingHelper.keyOf(nxt);</span>
+<span class="fc" id="L151">                Integer old = bestG.get(k);</span>
+<span class="fc bfc" id="L152" title="All 4 branches covered.">                if (old != null &amp;&amp; old &lt;= ng) continue;</span>
+<span class="fc" id="L153">                int h = PathFindingHelper.heuristic(nxt, goal);</span>
+<span class="fc" id="L154">                Node nn = new Node(nxt, ng, ng + h, cur);</span>
+<span class="fc" id="L155">                bestG.put(k, ng);</span>
+<span class="fc" id="L156">                open.add(nn);</span>
+            }
+<span class="fc" id="L158">        }</span>
+<span class="nc" id="L159">        System.out.println(&quot;out of open&quot;);</span>
+<span class="nc" id="L160">        return List.of();</span>
+    }
+
+    // Compute the orientation of the ordered triplet (a, b, c)
+    public static int orient(Coordinate a, Coordinate b, Coordinate c) {
+<span class="fc" id="L165">        double cross = (b.getLng() - a.getLng()) * (c.getLat() - a.getLat()) - (b.getLat() - a.getLat()) * (c.getLng() - a.getLng());</span>
+<span class="fc bfc" id="L166" title="All 2 branches covered.">        if (cross &gt; EPSILON) return 1;</span>
+<span class="fc bfc" id="L167" title="All 2 branches covered.">        if (cross &lt; -EPSILON) return -1;</span>
+<span class="fc" id="L168">        return 0;</span>
+    }
+
+    // Segment-segment intersection with collinearity handling.
+    public static boolean segmentsIntersect(Coordinate p1, Coordinate p2, Coordinate q1, Coordinate q2) {
+<span class="fc" id="L173">        int o1 = orient(p1, p2, q1), o2 = orient(p1, p2, q2);</span>
+<span class="fc" id="L174">        int o3 = orient(q1, q2, p1), o4 = orient(q1, q2, p2);</span>
+<span class="fc bfc" id="L175" title="All 4 branches covered.">        if (o1 != o2 &amp;&amp; o3 != o4) return true;</span>
+<span class="pc bpc" id="L176" title="3 of 4 branches missed.">        if (o1 == 0 &amp;&amp; onSegment(q1, p1, p2)) return true;</span>
+<span class="pc bpc" id="L177" title="3 of 4 branches missed.">        if (o2 == 0 &amp;&amp; onSegment(q2, p1, p2)) return true;</span>
+<span class="pc bpc" id="L178" title="3 of 4 branches missed.">        if (o3 == 0 &amp;&amp; onSegment(p1, q1, q2)) return true;</span>
+<span class="pc bpc" id="L179" title="1 of 4 branches missed.">        if (o4 == 0 &amp;&amp; onSegment(p2, q1, q2)) return true;</span>
+<span class="fc" id="L180">        return false;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

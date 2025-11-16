@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FlightBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">IlpTutorial1</a> &gt; <a href="index.source.html" class="el_package">uk.ac.ed.acp.cw2.data</a> &gt; <span class="el_source">FlightBuilder.java</span></div><h1>FlightBuilder.java</h1><pre class="source lang-java linenums">package uk.ac.ed.acp.cw2.data;
+
+import lombok.Getter;
+import lombok.Setter;
+import uk.ac.ed.acp.cw2.data.response.CalcDeliveryPathResponse;
+
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
+
+//Mutable builder object used during delivery path planning.
+@Getter
+@Setter
+public class FlightBuilder {
+    final String droneId;
+    final ServicePoint servicePoint;
+    final double capacity;
+    final int maxMoves;
+    final double costPerMove, costInitial, costFinal;
+
+    final LocalDate flightDate;
+    final DayOfWeek flightDOW;
+    final LocalTime flightStart;
+
+    // Status
+<span class="fc" id="L28">    int stepsUsed = 0;</span>
+    Coordinate end;          // Current end
+<span class="fc" id="L30">    double currentLoad = 0;</span>
+<span class="fc" id="L31">    boolean hasCooling = false, hasHeating = false;</span>
+
+    // Number of deliveries included so far
+<span class="fc" id="L34">    int deliveryCount = 0;</span>
+<span class="fc" id="L35">    List&lt;Double&gt; existingMaxCosts = new ArrayList&lt;&gt;();</span>
+
+    // Ordered list of path segments representing each delivery
+<span class="fc" id="L38">    List&lt;CalcDeliveryPathResponse.DeliverySegment&gt; segments = new ArrayList&lt;&gt;();</span>
+
+    // Construct a new builder for a drone’s initial flight plan.
+    public FlightBuilder(String droneId, ServicePoint sp, double capacity, int maxMoves,
+                         double cpm, double ci, double cf,
+<span class="fc" id="L43">                         MedDispatchRec first) {</span>
+<span class="fc" id="L44">        this.droneId = droneId;</span>
+<span class="fc" id="L45">        this.servicePoint = sp;</span>
+<span class="fc" id="L46">        this.capacity = capacity;</span>
+<span class="fc" id="L47">        this.maxMoves = maxMoves;</span>
+<span class="fc" id="L48">        this.costPerMove = cpm;</span>
+<span class="fc" id="L49">        this.costInitial = ci;</span>
+<span class="fc" id="L50">        this.costFinal = cf;</span>
+
+<span class="fc" id="L52">        this.end = sp.getLocation();</span>
+
+<span class="fc" id="L54">        this.flightDate = first.getDate();</span>
+<span class="pc bpc" id="L55" title="1 of 2 branches missed.">        if(flightDate!=null)</span>
+<span class="fc" id="L56">            this.flightDOW  = this.flightDate.getDayOfWeek();</span>
+        else
+<span class="nc" id="L58">            this.flightDOW  = null;</span>
+<span class="fc" id="L59">        this.flightStart = first.getTime();</span>
+<span class="fc" id="L60">    }</span>
+
+    // Append a new delivery segment to this flight plan.
+    // Updates step count, position, capacity, and requirement flags.
+    public void addSegment(int deliveryId, List&lt;Coordinate&gt; path, int steps, double addedLoad, Double maxCost,
+                    boolean markCooling, boolean markHeating) {
+<span class="fc" id="L66">        var seg = new CalcDeliveryPathResponse.DeliverySegment();</span>
+<span class="fc" id="L67">        seg.setDeliveryId(deliveryId);</span>
+<span class="fc" id="L68">        seg.setFlightPath(path);</span>
+<span class="fc" id="L69">        segments.add(seg);</span>
+
+<span class="fc" id="L71">        this.stepsUsed += steps;</span>
+<span class="fc" id="L72">        this.end = path.getLast();</span>
+<span class="fc" id="L73">        this.currentLoad += addedLoad;</span>
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">        if(maxCost!=null)</span>
+<span class="nc" id="L75">            existingMaxCosts.add(maxCost);</span>
+<span class="fc" id="L76">        this.deliveryCount += 1;</span>
+<span class="pc bpc" id="L77" title="2 of 4 branches missed.">        this.hasCooling  = this.hasCooling  || markCooling;</span>
+<span class="pc bpc" id="L78" title="2 of 4 branches missed.">        this.hasHeating  = this.hasHeating  || markHeating;</span>
+<span class="fc" id="L79">    }</span>
+
+    // Attach a return path to the last delivery segment, representing
+    // the drone’s journey back to the service point.
+    public void addReturn(List&lt;Coordinate&gt; back, int steps) {
+<span class="pc bpc" id="L84" title="1 of 2 branches missed.">        if (!segments.isEmpty()) {</span>
+<span class="fc" id="L85">            var seg = new CalcDeliveryPathResponse.DeliverySegment();</span>
+<span class="fc" id="L86">            seg.setDeliveryId(null);</span>
+<span class="fc" id="L87">            seg.setFlightPath(back);</span>
+<span class="fc" id="L88">            segments.add(seg);</span>
+            // var lastPath = segments.getLast().getFlightPath();
+            // for (int i = 1; i &lt; back.size(); i++) lastPath.add(back.get(i));
+        }
+<span class="fc" id="L92">        this.stepsUsed += steps;</span>
+<span class="fc" id="L93">        this.end = back.getLast();</span>
+<span class="fc" id="L94">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DroneController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">IlpTutorial1</a> &gt; <a href="index.source.html" class="el_package">uk.ac.ed.acp.cw2.controller</a> &gt; <span class="el_source">DroneController.java</span></div><h1>DroneController.java</h1><pre class="source lang-java linenums">package uk.ac.ed.acp.cw2.controller;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import uk.ac.ed.acp.cw2.data.*;
+import uk.ac.ed.acp.cw2.data.response.CalcDeliveryPathResponse;
+import uk.ac.ed.acp.cw2.data.response.GeoJsonResponse;
+import uk.ac.ed.acp.cw2.external.DroneService;
+
+import java.util.List;
+
+/**
+ * Controller providing endpoints for drone-related queries.
+ * All use /api/v1 and return 200, or 404 as specified.
+ */
+@RestController()
+@RequestMapping(&quot;/api/v1&quot;)
+public class DroneController {
+
+<span class="fc" id="L22">    private static final Logger logger = LoggerFactory.getLogger(GeometryController.class);</span>
+
+    private final DroneService droneService;
+    private final String serviceUrl;
+
+<span class="fc" id="L27">    public DroneController(DroneService droneService, String ilpEndpoint) {</span>
+<span class="fc" id="L28">        this.droneService = droneService;</span>
+<span class="fc" id="L29">        this.serviceUrl = ilpEndpoint;</span>
+<span class="fc" id="L30">    }</span>
+
+    /**
+     * GET /api/v1/dronesWithCooling/{state}
+     * Returns all drone IDs that either support or do not support cooling.
+     * - Returns 200 OK with a JSON array of matching drone IDs.
+     */
+    @GetMapping(&quot;/dronesWithCooling/{state}&quot;)
+    public List&lt;String&gt; dronesWithCooling(@PathVariable Boolean state) {
+<span class="nc" id="L39">        return droneService.dronesWithCooling(state);</span>
+    }
+
+
+    /**
+     * GET /api/v1/droneDetails/{id}
+     * Returns detailed information for a specific drone.
+     * - Returns 200 OK with a Drone object if the ID exists.
+     * - Returns 404 Not Found if no drone matches the given ID.
+     */
+    @GetMapping(&quot;/droneDetails/{id}&quot;)
+    public ResponseEntity&lt;Drone&gt; droneDetails(@PathVariable String id) {
+<span class="nc" id="L51">        Drone drone = droneService.droneDetails(id);</span>
+<span class="nc bnc" id="L52" title="All 2 branches missed.">        if (drone == null) {</span>
+<span class="nc" id="L53">            return ResponseEntity.notFound().build();</span>
+        }
+<span class="nc" id="L55">        return ResponseEntity.ok(drone);</span>
+    }
+
+    /**
+     * GET /api/v1/queryAsPath/{attribute}/{value}
+     * Returns all drone IDs whose given attribute matches the specified value.
+     * - Returns 200 OK with a JSON array of matching drone IDs.
+     */
+    @GetMapping(&quot;/queryAsPath/{attribute}/{value}&quot;)
+    public List&lt;String&gt; queryAsPath(@PathVariable String attribute, @PathVariable String value) {
+<span class="nc" id="L65">        return droneService.queryAsPath(attribute,value);</span>
+    }
+
+    /**
+     * POST /api/v1/query
+     * Returns all drone IDs whose attributes' value matches the given query conditions
+     * - Returns 200 OK with a JSON array of matching drone IDs.
+     */
+    @PostMapping(&quot;/query&quot;)
+    public List&lt;String&gt; query(@RequestBody List&lt;QueryCondition&gt; conditions) {
+<span class="nc" id="L75">        return droneService.query(conditions);</span>
+    }
+
+    /**
+     * POST /api/v1/queryAvailableDrones
+     * Returns all drone IDs that can fulfill the given list of medical dispatch records.
+     * - Returns 200 OK with a JSON array of available drone IDs.
+     */
+    @PostMapping(&quot;/queryAvailableDrones&quot;)
+    public List&lt;String&gt; queryAvailableDrones(@RequestBody List&lt;MedDispatchRec&gt; dispatches) {
+<span class="nc" id="L85">        return droneService.queryAvailableDrones(dispatches);</span>
+    }
+
+    /**
+     * POST /api/v1/calcDeliveryPath
+     * - 200 OK with a CalcDeliveryPathResponse JSON body describing all planned drone paths.
+     * - Returns an empty plan (zero cost/moves) if no valid routes are possible.
+     */
+    @PostMapping(&quot;/calcDeliveryPath&quot;)
+    public CalcDeliveryPathResponse calcDeliveryPath(@RequestBody List&lt;MedDispatchRec&gt; dispatches){
+<span class="nc" id="L95">        return droneService.calcDeliveryPath(dispatches);</span>
+    }
+
+    /**
+     * POST /api/v1/calcDeliveryPathAsGeoJson
+     * - 200 OK with a GeoJsonResponse JSON body describing a single drone paths.
+     * - Returns an empty plan (zero cost/moves) if no valid routes are possible.
+     */
+    @PostMapping(&quot;/calcDeliveryPathAsGeoJson&quot;)
+    public GeoJsonResponse calcDeliveryPathAsGeoJson(@RequestBody List&lt;MedDispatchRec&gt; dispatches){
+<span class="nc" id="L105">        return droneService.calcDeliveryPathAsGeoJson(dispatches);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

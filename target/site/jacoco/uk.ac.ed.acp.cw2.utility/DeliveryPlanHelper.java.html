@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DeliveryPlanHelper.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">IlpTutorial1</a> &gt; <a href="index.source.html" class="el_package">uk.ac.ed.acp.cw2.utility</a> &gt; <span class="el_source">DeliveryPlanHelper.java</span></div><h1>DeliveryPlanHelper.java</h1><pre class="source lang-java linenums">package uk.ac.ed.acp.cw2.utility;
+
+import uk.ac.ed.acp.cw2.data.*;
+import uk.ac.ed.acp.cw2.data.DroneForServicePoint;
+import uk.ac.ed.acp.cw2.data.response.*;
+
+
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
+// Helper utilities used by the delivery planning logic.
+<span class="nc" id="L16">public class DeliveryPlanHelper {</span>
+
+    // Check whether a list of MedDispatchRec valid or not
+    public static boolean isValidDispatchList(List&lt;MedDispatchRec&gt; recs) {
+<span class="pc bpc" id="L20" title="1 of 4 branches missed.">        if (recs == null || recs.isEmpty()) return false;</span>
+<span class="fc bfc" id="L21" title="All 2 branches covered.">        for (MedDispatchRec rec : recs) {</span>
+<span class="pc bpc" id="L22" title="1 of 2 branches missed.">            if (rec == null) return false;</span>
+<span class="fc bfc" id="L23" title="All 2 branches covered.">            if (rec.getId() == null) return false;</span>
+<span class="pc bpc" id="L24" title="1 of 2 branches missed.">            if (rec.getRequirements() == null) return false;</span>
+<span class="pc bpc" id="L25" title="1 of 2 branches missed.">            if (rec.getDelivery() == null) return false;</span>
+<span class="pc bpc" id="L26" title="3 of 4 branches missed.">            if (rec.getDate() == null &amp;&amp; rec.getTime() != null) return false;</span>
+<span class="fc" id="L27">            var req = rec.getRequirements();</span>
+<span class="pc bpc" id="L28" title="3 of 4 branches missed.">            if (req.isCooling() &amp;&amp; req.isHeating()) return false;</span>
+<span class="pc bpc" id="L29" title="1 of 2 branches missed.">            if (req.getCapacity() == null) return false;</span>
+<span class="fc" id="L30">        }</span>
+<span class="fc" id="L31">        return true;</span>
+    }
+
+    // Create an empty CalcDeliveryPathResponse with no drone paths and zero cost/moves.
+    public static CalcDeliveryPathResponse emptyDeliveryResponse() {
+<span class="fc" id="L36">        CalcDeliveryPathResponse response = new CalcDeliveryPathResponse();</span>
+<span class="fc" id="L37">        response.setDronePaths(new ArrayList&lt;&gt;());  // empty list</span>
+<span class="fc" id="L38">        response.setTotalCost(0.0);</span>
+<span class="fc" id="L39">        response.setTotalMoves(0);</span>
+<span class="fc" id="L40">        return response;</span>
+    }
+
+    // Aggregate a list of finished flights into a CalcDeliveryPathResponse
+    public static CalcDeliveryPathResponse buildDeliveryResponse(List&lt;FlightBuilder&gt; finishedFlights) {
+<span class="fc" id="L45">        CalcDeliveryPathResponse response = new CalcDeliveryPathResponse();</span>
+<span class="fc" id="L46">        double totalCost = 0.0;</span>
+<span class="fc" id="L47">        int totalMoves = 0;</span>
+<span class="fc" id="L48">        List&lt;CalcDeliveryPathResponse.DronePath&gt; dronePathsList = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L50" title="All 4 branches covered.">        if (finishedFlights == null || finishedFlights.isEmpty()) {</span>
+<span class="fc" id="L51">            return emptyDeliveryResponse();</span>
+        }
+
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        for (FlightBuilder fb : finishedFlights) {</span>
+<span class="pc bpc" id="L55" title="1 of 2 branches missed.">            if (fb == null) continue;</span>
+
+<span class="fc" id="L57">            double cpm = fb.getCostPerMove();</span>
+<span class="fc" id="L58">            double ci  = fb.getCostInitial();</span>
+<span class="fc" id="L59">            double cf  = fb.getCostFinal();</span>
+<span class="fc" id="L60">            double flightCost = ci + cf + fb.getStepsUsed() * cpm;</span>
+
+<span class="fc" id="L62">            totalCost += flightCost;</span>
+<span class="fc" id="L63">            totalMoves += fb.getStepsUsed();</span>
+
+<span class="fc" id="L65">            CalcDeliveryPathResponse.DronePath dp = new CalcDeliveryPathResponse.DronePath();</span>
+<span class="fc" id="L66">            dp.setDroneId(fb.getDroneId());</span>
+
+<span class="fc" id="L68">            List&lt;CalcDeliveryPathResponse.DeliverySegment&gt; deliveriesList = new ArrayList&lt;&gt;();</span>
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">            if (fb.getSegments() != null) {</span>
+<span class="fc bfc" id="L70" title="All 2 branches covered.">                for (var seg : fb.getSegments()) {</span>
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">                    if (seg == null) continue;</span>
+<span class="fc" id="L72">                    CalcDeliveryPathResponse.DeliverySegment out = new CalcDeliveryPathResponse.DeliverySegment();</span>
+<span class="fc" id="L73">                    out.setDeliveryId(seg.getDeliveryId());</span>
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">                    out.setFlightPath(seg.getFlightPath() == null</span>
+<span class="nc" id="L75">                            ? new ArrayList&lt;&gt;()</span>
+<span class="fc" id="L76">                            : new ArrayList&lt;&gt;(seg.getFlightPath()));</span>
+<span class="fc" id="L77">                    deliveriesList.add(out);</span>
+<span class="fc" id="L78">                }</span>
+            }
+
+<span class="fc" id="L81">            dp.setDeliveries(deliveriesList);</span>
+<span class="fc" id="L82">            dronePathsList.add(dp);</span>
+<span class="fc" id="L83">        }</span>
+
+<span class="fc" id="L85">        response.setTotalCost(totalCost);</span>
+<span class="fc" id="L86">        response.setTotalMoves(totalMoves);</span>
+<span class="fc" id="L87">        response.setDronePaths(dronePathsList);</span>
+<span class="fc" id="L88">        return response;</span>
+    }
+
+    // Create an empty GeoJsonResponse with no drone paths and null droneId
+    public static GeoJsonResponse emptyGeoJsonResponse() {
+<span class="nc" id="L93">        GeoJsonResponse res = new GeoJsonResponse();</span>
+<span class="nc" id="L94">        GeoJsonResponse.Geometry geom = new GeoJsonResponse.Geometry();</span>
+<span class="nc" id="L95">        geom.setCoordinates(new ArrayList&lt;&gt;());</span>
+<span class="nc" id="L96">        res.setGeometry(geom);</span>
+<span class="nc" id="L97">        GeoJsonResponse.Properties props = new GeoJsonResponse.Properties();</span>
+<span class="nc" id="L98">        props.setDroneId(null);</span>
+<span class="nc" id="L99">        res.setProperties(props);</span>
+<span class="nc" id="L100">        return res;</span>
+    }
+
+    public static GeoJsonResponse buildGeoJsonResponse(FlightBuilder fb) {
+<span class="nc bnc" id="L104" title="All 6 branches missed.">        if (fb == null || fb.getSegments() == null || fb.getSegments().isEmpty()) {</span>
+<span class="nc" id="L105">            return emptyGeoJsonResponse();</span>
+        }
+
+<span class="nc" id="L108">        List&lt;List&lt;Double&gt;&gt; coords = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L109" title="All 2 branches missed.">        for (var seg : fb.getSegments()) {</span>
+<span class="nc bnc" id="L110" title="All 6 branches missed.">            if (seg == null || seg.getFlightPath() == null || seg.getFlightPath().isEmpty()) continue;</span>
+<span class="nc" id="L111">            List&lt;List&lt;Double&gt;&gt; path = toLngLat(seg.getFlightPath());</span>
+
+<span class="nc bnc" id="L113" title="All 2 branches missed.">            if (coords.isEmpty()) {</span>
+<span class="nc" id="L114">                coords.addAll(path);</span>
+            } else {
+                // Prevent duplication
+<span class="nc" id="L117">                coords.addAll(path.subList(1, path.size()));</span>
+            }
+<span class="nc" id="L119">        }</span>
+<span class="nc bnc" id="L120" title="All 2 branches missed.">        if (coords.isEmpty()) {</span>
+<span class="nc" id="L121">            return emptyGeoJsonResponse();</span>
+        }
+<span class="nc" id="L123">        GeoJsonResponse res = new GeoJsonResponse();</span>
+<span class="nc" id="L124">        GeoJsonResponse.Geometry geom = new GeoJsonResponse.Geometry();</span>
+<span class="nc" id="L125">        geom.setCoordinates(coords);</span>
+<span class="nc" id="L126">        res.setGeometry(geom);</span>
+<span class="nc" id="L127">        GeoJsonResponse.Properties props = new GeoJsonResponse.Properties();</span>
+<span class="nc" id="L128">        props.setDroneId(fb.getDroneId());</span>
+<span class="nc" id="L129">        res.setProperties(props);</span>
+
+<span class="nc" id="L131">        return res;</span>
+    }
+
+
+
+    // Extract all polygon vertex lists from the given restricted areas.
+    public static List&lt;List&lt;Coordinate&gt;&gt; extractPolygons(List&lt;RestrictedArea&gt; areas) {
+<span class="fc" id="L138">        List&lt;List&lt;Coordinate&gt;&gt; polygons = new ArrayList&lt;&gt;();</span>
+<span class="pc bpc" id="L139" title="1 of 2 branches missed.">        if (areas == null) return polygons;</span>
+<span class="fc bfc" id="L140" title="All 2 branches covered.">        for (RestrictedArea area : areas) {</span>
+<span class="pc bpc" id="L141" title="1 of 2 branches missed.">            if (area == null) continue;</span>
+<span class="fc" id="L142">            List&lt;Coordinate&gt; vertices = area.getVertices();</span>
+<span class="pc bpc" id="L143" title="2 of 4 branches missed.">            if (vertices != null &amp;&amp; !vertices.isEmpty()) {</span>
+                // Add the polygon (list of vertices) to the result
+<span class="fc" id="L145">                polygons.add(new ArrayList&lt;&gt;(vertices));</span>
+            }
+<span class="fc" id="L147">        }</span>
+<span class="fc" id="L148">        return polygons;</span>
+    }
+
+    // Compute bounding boxes (min/max lng/lat) for each restricted area polygon.
+    public static List&lt;BoundBox&gt; extractBBoxes(List&lt;RestrictedArea&gt; areas) {
+<span class="fc" id="L153">        List&lt;BoundBox&gt; boxes = new ArrayList&lt;&gt;();</span>
+<span class="pc bpc" id="L154" title="1 of 2 branches missed.">        if (areas == null) return boxes;</span>
+<span class="fc bfc" id="L155" title="All 2 branches covered.">        for (RestrictedArea area : areas) {</span>
+<span class="fc" id="L156">            BoundBox BBox = polyBox(area.getVertices());</span>
+<span class="fc" id="L157">            boxes.add(BBox);</span>
+<span class="fc" id="L158">        }</span>
+<span class="fc" id="L159">        return boxes;</span>
+    }
+
+    // Find the DroneForServicePoint.Item entry for a given drone ID in a service point.
+    public static DroneForServicePoint.Item findDroneItem(DroneForServicePoint dfsp, String droneId) {
+<span class="pc bpc" id="L164" title="1 of 2 branches missed.">        if (dfsp == null) return null;</span>
+<span class="pc bpc" id="L165" title="1 of 2 branches missed.">        for (DroneForServicePoint.Item item : dfsp.getDrones()) {</span>
+<span class="fc bfc" id="L166" title="All 2 branches covered.">            if (Objects.equals(item.getId(), droneId)) return item;</span>
+<span class="fc" id="L167">        }</span>
+<span class="nc" id="L168">        return null;</span>
+    }
+
+    // Check that a per-delivery cost does not exceed any of the provided maxCost constraints.
+    // Comparison uses a tolerance eps
+    public static boolean withinAllMaxCosts(double perDeliveryCost, List&lt;Double&gt; existingMaxCost, double eps) {
+<span class="nc bnc" id="L174" title="All 4 branches missed.">        if (existingMaxCost == null || existingMaxCost.isEmpty()) return true;</span>
+<span class="nc bnc" id="L175" title="All 2 branches missed.">        for (Double cost : existingMaxCost) {</span>
+<span class="nc bnc" id="L176" title="All 2 branches missed.">            if (cost == null) continue;</span>
+<span class="nc bnc" id="L177" title="All 2 branches missed.">            if (perDeliveryCost - cost &gt; eps) return false;</span>
+<span class="nc" id="L178">        }</span>
+<span class="nc" id="L179">        return true;</span>
+    }
+
+    // Construct a bound box for a region
+    private static BoundBox polyBox(List&lt;Coordinate&gt; rectClosed) {
+<span class="fc" id="L184">        double minLng = Double.POSITIVE_INFINITY, minLat = Double.POSITIVE_INFINITY;</span>
+<span class="fc" id="L185">        double maxLng = Double.NEGATIVE_INFINITY, maxLat = Double.NEGATIVE_INFINITY;</span>
+<span class="fc bfc" id="L186" title="All 2 branches covered.">        for (var c : rectClosed) {</span>
+<span class="fc" id="L187">            minLng = Math.min(minLng, c.getLng());</span>
+<span class="fc" id="L188">            maxLng = Math.max(maxLng, c.getLng());</span>
+<span class="fc" id="L189">            minLat = Math.min(minLat, c.getLat());</span>
+<span class="fc" id="L190">            maxLat = Math.max(maxLat, c.getLat());</span>
+<span class="fc" id="L191">        }</span>
+<span class="fc" id="L192">        return new BoundBox(new Coordinate(maxLng, maxLat), new Coordinate(minLng, minLat));</span>
+    }
+
+    // Convert Coordinate to List of pairs of Lng lat
+    private static List&lt;List&lt;Double&gt;&gt; toLngLat(List&lt;Coordinate&gt; line) {
+<span class="nc" id="L197">        List&lt;List&lt;Double&gt;&gt; out = new ArrayList&lt;&gt;(line.size());</span>
+<span class="nc bnc" id="L198" title="All 2 branches missed.">        for (Coordinate c : line) {</span>
+<span class="nc bnc" id="L199" title="All 2 branches missed.">            if (c != null) out.add(List.of(c.getLng(), c.getLat()));</span>
+<span class="nc" id="L200">        }</span>
+<span class="nc" id="L201">        return out;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GeometryController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">IlpTutorial1</a> &gt; <a href="index.source.html" class="el_package">uk.ac.ed.acp.cw2.controller</a> &gt; <span class="el_source">GeometryController.java</span></div><h1>GeometryController.java</h1><pre class="source lang-java linenums">package uk.ac.ed.acp.cw2.controller;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import uk.ac.ed.acp.cw2.data.*;
+import uk.ac.ed.acp.cw2.service.GeoService;
+import uk.ac.ed.acp.cw2.service.ValidationService;
+
+/**
+ * Controller for geometry endpoints.
+ * Includes index, UID, and geometry-related operations.
+ * All use /api/v1 and return 200 or 400 as specified.
+ */
+@RestController()
+@RequestMapping(&quot;/api/v1&quot;)
+public class GeometryController {
+
+<span class="fc" id="L20">    private static final Logger logger = LoggerFactory.getLogger(GeometryController.class);</span>
+    private final GeoService geo;
+    private final ValidationService validation;
+    private final String serviceUrl;
+<span class="fc" id="L24">    public GeometryController(GeoService geo, ValidationService validation, String ilpEndpoint) {</span>
+<span class="fc" id="L25">        this.geo = geo;</span>
+<span class="fc" id="L26">        this.validation = validation;</span>
+<span class="fc" id="L27">        this.serviceUrl = ilpEndpoint;</span>
+<span class="fc" id="L28">    }</span>
+
+    @GetMapping(&quot;/&quot;)
+    public String index() {
+<span class="nc" id="L32">        return &quot;&lt;html&gt;&lt;body&gt;&quot; +</span>
+                &quot;&lt;h1&gt;Welcome from ILP&lt;/h1&gt;&quot; +
+                &quot;&lt;h4&gt;ILP-REST-Service-URL:&lt;/h4&gt; &lt;a href=\&quot;&quot; + serviceUrl + &quot;\&quot; target=\&quot;_blank\&quot;&gt; &quot; + serviceUrl + &quot; &lt;/a&gt;&quot; +
+                &quot;&lt;/body&gt;&lt;/html&gt;&quot;;
+    }
+
+    @GetMapping(&quot;/uid&quot;)
+    public String uid() {
+<span class="fc" id="L40">        return &quot;s2536347&quot;;</span>
+    }
+
+    /**
+     * POST /api/v1/distanceTo
+     * Calculates the Euclidean distance between two coordinates.
+     * - Returns 200 with the numeric distance if both positions are valid.
+     * - Returns 400 if either position is null or outside the valid lat/lng range.
+     */
+    @PostMapping(&quot;/distanceTo&quot;)
+    public ResponseEntity&lt;Double&gt; distanceTo(@RequestBody DistanceRequest req) {
+<span class="pc bpc" id="L51" title="1 of 2 branches missed.">        Coordinate pos1 = (req != null) ? req.getPosition1() : null;</span>
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">        Coordinate pos2 = (req != null) ? req.getPosition2() : null;</span>
+        //Check whether the coordinate lies in a valid range.
+<span class="fc bfc" id="L54" title="All 4 branches covered.">        if (!validation.isValidCoordinate(pos1) || !validation.isValidCoordinate(pos2)) {</span>
+<span class="fc" id="L55">            return ResponseEntity.badRequest().build();</span>
+        }
+<span class="fc" id="L57">        return ResponseEntity.ok(geo.distanceBetween(pos1, pos2));</span>
+    }
+
+    /**
+     * POST /api/v1/isCloseTo
+     * Returns true if two positions are closer than 0.00015, false otherwise.
+     * - Returns 200 with a boolean result for valid input.
+     * - Returns 400 for null or invalid coordinates.
+     */
+    @PostMapping(&quot;/isCloseTo&quot;)
+    public ResponseEntity&lt;Boolean&gt; isCloseTo(@RequestBody DistanceRequest req) {
+<span class="pc bpc" id="L68" title="1 of 2 branches missed.">        Coordinate pos1 = (req != null) ? req.getPosition1() : null;</span>
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">        Coordinate pos2 = (req != null) ? req.getPosition2() : null;</span>
+<span class="fc bfc" id="L70" title="All 4 branches covered.">        if (!validation.isValidCoordinate(pos1) || !validation.isValidCoordinate(pos2)) {</span>
+<span class="fc" id="L71">            return ResponseEntity.badRequest().build();</span>
+        }
+        // prevent floating error
+<span class="fc" id="L74">        return ResponseEntity.ok(geo.isNear(pos1, pos2));</span>
+    }
+
+    /**
+     * POST /api/v1/nextPosition
+     * Calculates the next coordinate from a start position and an angle.
+     * - Angle must be an exact multiple of 22.5° (with tiny FP tolerance); otherwise 400.
+     * - Each move advances by a fixed step of 0.00015° along that direction.
+     * - Returns 200 with the new Coordinate as JSON on valid input.
+     * - Returns 400 if the input coordinate or angle is invalid.
+     */
+    @PostMapping(&quot;/nextPosition&quot;)
+    public ResponseEntity&lt;Coordinate&gt; nextPosition(@RequestBody NextPositionRequest req) {
+<span class="pc bpc" id="L87" title="1 of 2 branches missed.">        Coordinate start = (req != null) ? req.getStart() : null;</span>
+<span class="pc bpc" id="L88" title="1 of 2 branches missed.">        Double angle = (req != null) ? req.getAngle() : null;</span>
+
+<span class="fc bfc" id="L90" title="All 4 branches covered.">        if (!validation.isValidCoordinate(start) || !validation.isValidAngle(angle)) {</span>
+<span class="fc" id="L91">            return ResponseEntity.badRequest().build();</span>
+        }
+<span class="fc" id="L93">        return ResponseEntity.ok(geo.nextPosition(start,angle));</span>
+    }
+
+    /**
+     * POST /api/v1/isInRegion
+     * Checks whether a given position lies inside a polygonal region.
+     * - Region must have at least 4 vertices and be closed (last vertex equals first).
+     * - A point on the polygon border counts as inside.
+     * - Returns 200 with true/false on valid input.
+     * - Returns 400 if the position or region data is invalid (e.g. missing, NaN, or open polygon).
+     */
+    @PostMapping(&quot;/isInRegion&quot;)
+    public  ResponseEntity&lt;Boolean&gt; isInRegion(@RequestBody RegionRequest req) {
+<span class="pc bpc" id="L106" title="1 of 2 branches missed.">        Coordinate pos = (req != null) ? req.getPosition() : null;</span>
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">        Region region = (req != null) ? req.getRegion() : null;</span>
+<span class="pc bpc" id="L108" title="1 of 4 branches missed.">        if(!validation.isValidCoordinate(pos) || !validation.isValidRegion(region)) {</span>
+<span class="fc" id="L109">            return ResponseEntity.badRequest().build();</span>
+        }
+<span class="fc" id="L111">        return  ResponseEntity.ok(geo.isPointInRegion(pos,region.getVertices()));</span>
+    }
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

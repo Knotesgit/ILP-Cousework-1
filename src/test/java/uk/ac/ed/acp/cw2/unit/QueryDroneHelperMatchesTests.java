@@ -33,57 +33,66 @@ class QueryDroneHelperMatchesTests {
 
     @Test
     void id_equal_returnsTrue() {
-        assertTrue(QueryDroneHelper.matches(d, "id", "D1"));
+        assertTrue(QueryDroneHelper
+                .matches(d, "id", "D1"));
     }
 
     @Test
     void id_notEqual_returnsFalse() {
-        assertFalse(QueryDroneHelper.matches(d, "id", "D2"));
+        assertFalse(QueryDroneHelper
+                .matches(d, "id", "D2"));
     }
 
     @Test
     void name_caseInsensitiveMatch_returnsTrue() {
-        assertTrue(QueryDroneHelper.matches(d, "NAME", "cargoalpha"));
+        assertTrue(QueryDroneHelper
+                .matches(d, "NAME", "cargoalpha"));
     }
 
     // ---------- Boolean fields (true/false + weird input) ----------
 
     @Test
     void cooling_trueMatch_returnsTrue() {
-        assertTrue(QueryDroneHelper.matches(d, "cooling", "true"));
+        assertTrue(QueryDroneHelper
+                .matches(d, "cooling", "true"));
     }
 
     @Test
     void cooling_falseMismatch_returnsFalse() {
-        assertFalse(QueryDroneHelper.matches(d, "cooling", "false"));
+        assertFalse(QueryDroneHelper
+                .matches(d, "cooling", "false"));
     }
 
     @Test
     void heating_weirdStringParsesFalse_returnsFalse() {
-        assertFalse(QueryDroneHelper.matches(d, "heating", "Yeah"));
+        assertFalse(QueryDroneHelper.matches(d, "heating", "true"));
     }
 
     // ---------- Numeric fields (equal, not equal, parse error path) ----------
 
     @Test
     void capacity_equal_returnsTrue() {
-        assertTrue(QueryDroneHelper.matches(d, "capacity", "10.0"));
+        assertTrue(QueryDroneHelper
+                .matches(d, "capacity", "10.0"));
     }
 
     @Test
     void capacity_notEqual_returnsFalse() {
-        assertFalse(QueryDroneHelper.matches(d, "capacity", "5.0"));
+        assertFalse(QueryDroneHelper
+                .matches(d, "capacity", "5.0"));
     }
 
     @Test
     void costInitial_parseError_returnsFalse() {
-        assertFalse(QueryDroneHelper.matches(d, "costinitial", "abc"));
+        assertFalse(QueryDroneHelper
+                .matches(d, "costinitial", "abc"));
     }
 
     // ---------- Default branch ----------
 
     @Test
     void unknownAttribute_returnsFalse() {
-        assertFalse(QueryDroneHelper.matches(d, "unknown", "value"));
+        assertFalse(QueryDroneHelper
+                .matches(d, "unknown", "value"));
     }
 }

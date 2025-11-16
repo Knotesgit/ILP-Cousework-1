@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GeoServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">IlpTutorial1</a> &gt; <a href="index.source.html" class="el_package">uk.ac.ed.acp.cw2.service</a> &gt; <span class="el_source">GeoServiceImpl.java</span></div><h1>GeoServiceImpl.java</h1><pre class="source lang-java linenums">package uk.ac.ed.acp.cw2.service;
+
+import org.springframework.stereotype.Service;
+import uk.ac.ed.acp.cw2.data.*;
+import uk.ac.ed.acp.cw2.utility.GeoUtilities;
+import uk.ac.ed.acp.cw2.utility.PathFindingHelper;
+
+import java.util.*;
+
+
+@Service
+<span class="fc" id="L12">public class GeoServiceImpl implements GeoService {</span>
+
+    // Check whether two pos are near (distance &lt; 0.00015)
+    @Override
+    public boolean isNear(Coordinate pos1, Coordinate pos2) {
+<span class="fc" id="L17">        return GeoUtilities.isNear(pos1,pos2);</span>
+    }
+
+    // Check whether the point a is on segment pq (inclusive)
+    @Override
+    public boolean onSegment(Coordinate a, Coordinate p, Coordinate q) {
+<span class="fc" id="L23">       return GeoUtilities.onSegment(a,p,q);</span>
+    }
+
+    // Check whether a point is in a region
+    @Override
+    public boolean isPointInRegion(Coordinate p, List&lt;Coordinate&gt; vertices) {
+<span class="fc" id="L29">       return GeoUtilities.isPointInRegion(p, vertices);</span>
+    }
+
+    // Computes Euclidean distance between two coordinates
+    @Override
+    public double distanceBetween(Coordinate pos1, Coordinate pos2) {
+<span class="fc" id="L35">        return GeoUtilities.distanceBetween(pos1,pos2);</span>
+    }
+
+    // Compute the next coordinate from a start position and an angle.
+   @Override
+   public Coordinate nextPosition(Coordinate start, double angle){
+<span class="fc" id="L41">       return GeoUtilities.nextPosition(start,angle);</span>
+   }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

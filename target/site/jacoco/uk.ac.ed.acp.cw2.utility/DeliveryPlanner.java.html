@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DeliveryPlanner.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">IlpTutorial1</a> &gt; <a href="index.source.html" class="el_package">uk.ac.ed.acp.cw2.utility</a> &gt; <span class="el_source">DeliveryPlanner.java</span></div><h1>DeliveryPlanner.java</h1><pre class="source lang-java linenums">package uk.ac.ed.acp.cw2.utility;
+
+import uk.ac.ed.acp.cw2.data.*;
+
+import java.time.LocalDate;
+import java.util.*;
+
+public class DeliveryPlanner {
+<span class="nc" id="L9">    public DeliveryPlanner() {</span>
+<span class="nc" id="L10">    }</span>
+
+    public static boolean tryAssignOrStartFlight(
+            List&lt;ServicePoint&gt; servicePts,
+            Map&lt;Integer, DroneForServicePoint&gt; spMapDrone,
+            Map&lt;String, Drone&gt; droneById,
+            List&lt;List&lt;Coordinate&gt;&gt; restrictedPolys,
+            List&lt;BoundBox&gt; boxes,
+            MedDispatchRec r,
+            LocalDate day,
+            List&lt;FlightBuilder&gt; active,
+            List&lt;FlightBuilder&gt; finished) {
+
+<span class="fc bfc" id="L23" title="All 2 branches covered.">        if (!active.isEmpty()) {</span>
+<span class="fc" id="L24">            boolean merged = tryMergeFlight(r, active, finished,</span>
+                    droneById, spMapDrone, restrictedPolys, boxes, day);
+<span class="pc bpc" id="L26" title="1 of 2 branches missed.">            if (merged) return true;</span>
+        }
+
+<span class="fc" id="L29">        FlightBuilder fb = openNewFlight(servicePts, droneById, spMapDrone, r,</span>
+                restrictedPolys, boxes, day);
+<span class="fc bfc" id="L31" title="All 2 branches covered.">        if (fb != null) {</span>
+<span class="fc" id="L32">            active.add(fb);</span>
+<span class="fc" id="L33">            return true;</span>
+        }
+<span class="fc" id="L35">        return false;</span>
+    }
+
+    public static FlightBuilder openNewFlight(
+            List&lt;ServicePoint&gt; spCandidates,
+            Map&lt;String, Drone&gt; droneById,
+            Map&lt;Integer, DroneForServicePoint&gt; spMapDrone,
+            MedDispatchRec rec, List&lt;List&lt;Coordinate&gt;&gt; restrictedPolys,
+            List&lt;BoundBox&gt; boxes, LocalDate day) {
+<span class="fc" id="L44">        Coordinate target = rec.getDelivery();</span>
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">        if (target == null) return null;</span>
+<span class="fc" id="L46">        spCandidates.sort(Comparator.comparingDouble(</span>
+<span class="fc" id="L47">                sp -&gt; GeoUtilities.distanceBetween(sp.getLocation(), target)));</span>
+<span class="fc bfc" id="L48" title="All 2 branches covered.">        for (ServicePoint sp : spCandidates) {</span>
+<span class="fc" id="L49">            List&lt;String&gt; availableDroneIds = QueryDroneHelper.</span>
+<span class="fc" id="L50">                    feasibleDroneIdsAtSP(spMapDrone.get(sp.getId()),</span>
+                            droneById, rec, day);
+<span class="fc bfc" id="L52" title="All 2 branches covered.">            if (availableDroneIds.isEmpty())</span>
+<span class="fc" id="L53">                continue;</span>
+<span class="fc" id="L54">            List&lt;Coordinate&gt; forward = GeoUtilities.pathBetween(</span>
+<span class="fc" id="L55">                    sp.getLocation(), target, restrictedPolys, boxes);</span>
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">            if (forward.isEmpty()) continue;</span>
+<span class="fc" id="L57">            int fSteps = forward.size() - 1;</span>
+<span class="fc" id="L58">            List&lt;Coordinate&gt; forwardWithHover = new ArrayList&lt;Coordinate&gt;(forward);</span>
+<span class="fc" id="L59">            forwardWithHover.add(forward.getLast());</span>
+            // Same path to return if only one delivery
+            // +1 for hover
+<span class="fc" id="L62">            int neededStepsNow = fSteps + fSteps + 1;</span>
+<span class="fc" id="L63">            String bestDroneId = null;</span>
+<span class="pc bpc" id="L64" title="1 of 2 branches missed.">            double bestEstCost = (rec.getRequirements().getMaxCost() == null) ?</span>
+<span class="pc" id="L65">                    Double.MAX_VALUE : rec.getRequirements().getMaxCost();</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">            for (String id : availableDroneIds) {</span>
+<span class="fc" id="L67">                Drone d = droneById.get(id);</span>
+<span class="fc" id="L68">                var cap = d.getCapability();</span>
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">                if (neededStepsNow &gt; cap.getMaxMoves()) continue;</span>
+                // estimation of cost and steps
+<span class="fc" id="L71">                double est = cap.getCostInitial() + cap.getCostFinal()</span>
+<span class="fc" id="L72">                        + cap.getCostPerMove() * neededStepsNow;</span>
+<span class="fc bfc" id="L73" title="All 2 branches covered.">                if (est &lt; bestEstCost) {</span>
+<span class="fc" id="L74">                    bestEstCost = est;</span>
+<span class="fc" id="L75">                    bestDroneId = d.getId();</span>
+                }
+<span class="fc" id="L77">            }</span>
+<span class="pc bpc" id="L78" title="1 of 2 branches missed.">            if (bestDroneId == null) continue;</span>
+
+<span class="fc" id="L80">            Drone d = droneById.get(bestDroneId);</span>
+<span class="fc" id="L81">            var cap = d.getCapability();</span>
+<span class="fc" id="L82">            FlightBuilder fb = new FlightBuilder(</span>
+<span class="fc" id="L83">                    d.getId(), sp,</span>
+<span class="fc" id="L84">                    cap.getCapacity(),</span>
+<span class="fc" id="L85">                    cap.getMaxMoves(),</span>
+<span class="fc" id="L86">                    cap.getCostPerMove(),</span>
+<span class="fc" id="L87">                    cap.getCostInitial(), cap.getCostFinal(), rec);</span>
+<span class="fc" id="L88">            fb.addSegment(</span>
+<span class="fc" id="L89">                    rec.getId(),</span>
+                    forwardWithHover,
+                    (fSteps + 1),
+<span class="fc" id="L92">                    rec.getRequirements().getCapacity(),</span>
+<span class="fc" id="L93">                    rec.getRequirements().getMaxCost(),</span>
+<span class="fc" id="L94">                    rec.getRequirements().isCooling(),</span>
+<span class="fc" id="L95">                    rec.getRequirements().isHeating()</span>
+            );
+<span class="fc" id="L97">            return fb;</span>
+        }
+<span class="fc" id="L99">        return null;</span>
+    }
+
+    public static boolean tryMergeFlight(MedDispatchRec rec,
+                                  List&lt;FlightBuilder&gt; actives, List&lt;FlightBuilder&gt; finished,
+                                  Map&lt;String, Drone&gt; droneById,
+                                  Map&lt;Integer, DroneForServicePoint&gt; spMapDrone,
+                                  List&lt;List&lt;Coordinate&gt;&gt; restrictedPolys,
+                                  List&lt;BoundBox&gt; boxes,
+                                  LocalDate day) {
+
+<span class="pc bpc" id="L110" title="2 of 4 branches missed.">        if (actives == null || actives.isEmpty()) {</span>
+<span class="nc" id="L111">            return false;</span>
+        }
+<span class="fc" id="L113">        ListIterator&lt;FlightBuilder&gt; it = actives.listIterator();</span>
+<span class="fc bfc" id="L114" title="All 2 branches covered.">        while (it.hasNext()) {</span>
+            // Time availability Check
+<span class="fc" id="L116">            FlightBuilder fb = it.next();</span>
+<span class="fc" id="L117">            LocalDate fd = fb.getFlightDate();</span>
+<span class="pc bpc" id="L118" title="1 of 4 branches missed.">            if (fd != null &amp;&amp; !fd.equals(day)) {</span>
+<span class="fc" id="L119">                it.remove();</span>
+<span class="fc" id="L120">                closeFlight(fb, finished, restrictedPolys, boxes);</span>
+<span class="fc" id="L121">                continue;</span>
+            }
+            // Time availability check and cooling/heating functionality check
+<span class="fc" id="L124">            var droneItem = DeliveryPlanHelper.findDroneItem(</span>
+<span class="fc" id="L125">                    spMapDrone.get(fb.getServicePoint().getId()), fb.getDroneId());</span>
+<span class="pc bpc" id="L126" title="1 of 2 branches missed.">            if (!QueryDroneHelper.droneMeetsRec(droneById.get(fb.getDroneId()),</span>
+                    droneItem, rec, day))
+<span class="nc" id="L128">                continue;</span>
+
+            // Capacity check
+<span class="fc bfc" id="L131" title="All 2 branches covered.">            if (rec.getRequirements().getCapacity() + fb.getCurrentLoad() &gt; fb.getCapacity())</span>
+<span class="fc" id="L132">                continue;</span>
+            // Max Step Check
+<span class="fc" id="L134">            List&lt;Coordinate&gt; forward = GeoUtilities.pathBetween(fb.getEnd(), rec.getDelivery(),</span>
+                    restrictedPolys, boxes);
+<span class="pc bpc" id="L136" title="1 of 2 branches missed.">            if (forward.isEmpty()) continue;</span>
+<span class="fc" id="L137">            List&lt;Coordinate&gt; forwardWithHover = new ArrayList&lt;Coordinate&gt;(forward);</span>
+<span class="fc" id="L138">            forwardWithHover.add(forward.getLast());</span>
+<span class="fc" id="L139">            int fSteps = forwardWithHover.size() - 1;</span>
+            // Early termination
+<span class="pc bpc" id="L141" title="1 of 2 branches missed.">            if (fSteps + fb.getStepsUsed() &gt; fb.getMaxMoves()) {</span>
+<span class="nc" id="L142">                continue;</span>
+            }
+            // PreCheck return step and cost
+<span class="fc" id="L145">            List&lt;Coordinate&gt; back = GeoUtilities.pathBetween(rec.getDelivery(),</span>
+<span class="fc" id="L146">                    fb.getServicePoint().getLocation(), restrictedPolys, boxes);</span>
+<span class="pc bpc" id="L147" title="1 of 2 branches missed.">            if (back.isEmpty()) continue;</span>
+<span class="fc" id="L148">            int bSteps = back.size() - 1;</span>
+<span class="pc bpc" id="L149" title="1 of 2 branches missed.">            if (fSteps + bSteps + fb.getStepsUsed() &gt; fb.getMaxMoves()) {</span>
+<span class="nc" id="L150">                continue;</span>
+            }
+<span class="fc" id="L152">            Double maxCost = rec.getRequirements().getMaxCost();</span>
+<span class="pc bpc" id="L153" title="1 of 2 branches missed.">            if (maxCost != null) {</span>
+<span class="nc" id="L154">                int deliveryCount = fb.getDeliveryCount() + 1;</span>
+<span class="nc" id="L155">                List&lt;Double&gt; existingMaxCost = new ArrayList&lt;Double&gt;(fb.getExistingMaxCosts());</span>
+<span class="nc" id="L156">                existingMaxCost.add(maxCost);</span>
+<span class="nc" id="L157">                double estForEachDelivery = ((fb.getStepsUsed() + fSteps + bSteps) * fb.getCostPerMove() +</span>
+<span class="nc" id="L158">                        fb.getCostInitial() + fb.getCostFinal()) / deliveryCount;</span>
+<span class="nc bnc" id="L159" title="All 2 branches missed.">                if (!DeliveryPlanHelper.withinAllMaxCosts(estForEachDelivery, existingMaxCost, 1e-12))</span>
+<span class="nc" id="L160">                    continue;</span>
+            }
+<span class="fc" id="L162">            var req = rec.getRequirements();</span>
+<span class="fc" id="L163">            fb.addSegment(rec.getId(), forwardWithHover, fSteps, req.getCapacity(),</span>
+<span class="fc" id="L164">                    req.getMaxCost(), req.isCooling(), req.isHeating());</span>
+<span class="fc" id="L165">            return true;</span>
+        }
+<span class="fc" id="L167">        return false;</span>
+    }
+
+    public static void closeFlight(FlightBuilder fb, List&lt;FlightBuilder&gt; finished,
+                            List&lt;List&lt;Coordinate&gt;&gt; restrictedPolys, List&lt;BoundBox&gt; boxes) {
+        // Same path to return if only one delivery
+        // remove reversed first for hover
+<span class="fc bfc" id="L174" title="All 2 branches covered.">        if (fb.getDeliveryCount() == 1) {</span>
+<span class="fc" id="L175">            List&lt;Coordinate&gt; forwardWithHover = fb.getSegments().getFirst().getFlightPath();</span>
+<span class="fc" id="L176">            List&lt;Coordinate&gt; back = new ArrayList&lt;Coordinate&gt;(forwardWithHover);</span>
+<span class="fc" id="L177">            back.removeLast();</span>
+<span class="fc" id="L178">            back = back.reversed();</span>
+<span class="fc" id="L179">            fb.addReturn(back, (back.size() - 1));</span>
+<span class="fc" id="L180">            finished.add(fb);</span>
+<span class="fc" id="L181">        } else {</span>
+<span class="fc" id="L182">            List&lt;Coordinate&gt; back = GeoUtilities.pathBetween(fb.getEnd(),</span>
+<span class="fc" id="L183">                    fb.getServicePoint().getLocation(), restrictedPolys, boxes);</span>
+<span class="fc" id="L184">            fb.addReturn(back, (back.size() - 1));</span>
+<span class="fc" id="L185">            finished.add(fb);</span>
+        }
+<span class="fc" id="L187">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

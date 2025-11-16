@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DroneServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">IlpTutorial1</a> &gt; <a href="index.source.html" class="el_package">uk.ac.ed.acp.cw2.external</a> &gt; <span class="el_source">DroneServiceImpl.java</span></div><h1>DroneServiceImpl.java</h1><pre class="source lang-java linenums">package uk.ac.ed.acp.cw2.external;
+
+import org.springframework.stereotype.Service;
+import uk.ac.ed.acp.cw2.data.*;
+import uk.ac.ed.acp.cw2.data.DroneForServicePoint;
+import uk.ac.ed.acp.cw2.data.response.CalcDeliveryPathResponse;
+import uk.ac.ed.acp.cw2.data.response.GeoJsonResponse;
+import uk.ac.ed.acp.cw2.utility.DeliveryPlanHelper;
+import uk.ac.ed.acp.cw2.utility.DeliveryPlanner;
+import uk.ac.ed.acp.cw2.utility.QueryDroneHelper;
+
+
+import java.time.LocalDate;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+@Service
+public class DroneServiceImpl implements DroneService {
+    private final IlpClientComponent ilpClient;
+
+<span class="fc" id="L22">    public DroneServiceImpl(IlpClientComponent ilpClient) {</span>
+<span class="fc" id="L23">        this.ilpClient = ilpClient;</span>
+<span class="fc" id="L24">    }</span>
+
+    // Returns drone IDs filtered by cooling capability.
+    @Override
+    public List&lt;String&gt; dronesWithCooling(Boolean state){
+<span class="fc" id="L29">        List&lt;Drone&gt; drones = ilpClient.getAllDrones();</span>
+<span class="fc" id="L30">        return drones.stream()</span>
+<span class="fc bfc" id="L31" title="All 2 branches covered.">                .filter(d -&gt; d.getCapability().isCooling() == state)</span>
+<span class="fc" id="L32">                .map(Drone::getId)</span>
+<span class="fc" id="L33">                .toList();</span>
+    }
+
+    // Returns the drone matching the given ID or null if not found
+    @Override
+    public Drone droneDetails(String id){
+<span class="fc" id="L39">        List&lt;Drone&gt; drones = ilpClient.getAllDrones();</span>
+<span class="fc" id="L40">        return drones.stream()</span>
+<span class="fc" id="L41">                .filter(d -&gt; Objects.equals(d.getId(), id))</span>
+<span class="fc" id="L42">                .findFirst()</span>
+<span class="fc" id="L43">                .orElse(null);</span>
+    }
+
+    // Returns IDs of drones whose given attribute matches the specified value
+    @Override
+    public List&lt;String&gt; queryAsPath(String attribute, String value){
+<span class="fc" id="L49">        List&lt;Drone&gt; drones = ilpClient.getAllDrones();</span>
+<span class="fc" id="L50">        return drones.stream()</span>
+<span class="fc" id="L51">                .filter(d -&gt; QueryDroneHelper.matches(d, attribute, value))</span>
+<span class="fc" id="L52">                .map(Drone::getId)</span>
+<span class="fc" id="L53">                .toList();</span>
+    }
+
+    // Returns IDs of drones whose attributes' value matches the given query conditions
+    @Override
+    public List&lt;String&gt; query(List&lt;QueryCondition&gt; conditions){
+<span class="fc" id="L59">        List&lt;Drone&gt; drones = ilpClient.getAllDrones();</span>
+<span class="fc" id="L60">        return drones.stream()</span>
+<span class="fc" id="L61">                .filter(d -&gt; QueryDroneHelper.matchesConditions(d, conditions))</span>
+<span class="fc" id="L62">                .map(Drone::getId)</span>
+<span class="fc" id="L63">                .toList();</span>
+    }
+
+    // Returns IDs of drones that are available for a list of medicine dispatch record
+    @Override
+    public List&lt;String&gt; queryAvailableDrones(List&lt;MedDispatchRec&gt; dispatches){
+<span class="fc bfc" id="L69" title="All 4 branches covered.">        if (dispatches == null || dispatches.isEmpty()) return List.of();</span>
+<span class="fc bfc" id="L70" title="All 2 branches covered.">        for (MedDispatchRec rec : dispatches) {</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">            if (rec.getRequirements() == null) return List.of();</span>
+<span class="pc bpc" id="L72" title="1 of 4 branches missed.">            if (rec.getRequirements().isCooling() &amp;&amp; rec.getRequirements().isHeating())</span>
+<span class="fc" id="L73">                return List.of();</span>
+<span class="fc" id="L74">        }</span>
+<span class="fc" id="L75">        int n = dispatches.size();</span>
+<span class="fc" id="L76">        List&lt;Drone&gt; drones = ilpClient.getAllDrones();</span>
+<span class="fc" id="L77">        List&lt;DroneForServicePoint&gt; dfsp = ilpClient.getDronesForServicePoints();</span>
+<span class="fc" id="L78">        List&lt;ServicePoint&gt; servicePoints = ilpClient.getServicePoints();</span>
+
+<span class="fc" id="L80">        Map&lt;String, List&lt;DroneForServicePoint.Availability&gt;&gt; availability</span>
+<span class="fc" id="L81">                = QueryDroneHelper.buildAvailabilityIndex(dfsp);</span>
+<span class="fc" id="L82">        Map&lt;String, List&lt;ServicePoint&gt;&gt; homePoints = QueryDroneHelper.buildHomePointIndex(dfsp, servicePoints);</span>
+
+<span class="fc" id="L84">        return drones.stream()</span>
+<span class="fc" id="L85">                .filter(d -&gt; QueryDroneHelper.canHandleAll(d,</span>
+<span class="fc" id="L86">                        availability.getOrDefault(d.getId(), Collections.emptyList()),</span>
+<span class="fc" id="L87">                        homePoints.getOrDefault(d.getId(), Collections.emptyList())</span>
+                        ,dispatches, n))
+<span class="fc" id="L89">                .map(Drone::getId)</span>
+<span class="fc" id="L90">                .sorted()</span>
+<span class="fc" id="L91">                .toList();</span>
+    }
+
+
+    @Override
+    public CalcDeliveryPathResponse calcDeliveryPath(List&lt;MedDispatchRec&gt; recs) {
+        // Basic record verification
+<span class="fc bfc" id="L98" title="All 2 branches covered.">        if(!DeliveryPlanHelper.isValidDispatchList(recs))</span>
+<span class="fc" id="L99">            return DeliveryPlanHelper.emptyDeliveryResponse();</span>
+
+<span class="fc" id="L101">        List&lt;Drone&gt; drones = ilpClient.getAllDrones();</span>
+<span class="fc" id="L102">        List&lt;ServicePoint&gt; servicePts = ilpClient.getServicePoints();</span>
+<span class="fc" id="L103">        List&lt;RestrictedArea&gt; areas = ilpClient.getRestrictedAreas();</span>
+<span class="fc" id="L104">        List&lt;DroneForServicePoint&gt; dfsp = ilpClient.getDronesForServicePoints();</span>
+<span class="fc" id="L105">        List&lt;List&lt;Coordinate&gt;&gt; restrictedPolys = DeliveryPlanHelper.extractPolygons(areas);</span>
+<span class="fc" id="L106">        List&lt;BoundBox&gt; BBoxes = DeliveryPlanHelper.extractBBoxes(areas);</span>
+        // Map drone by drone id
+<span class="fc" id="L108">        Map&lt;String, Drone&gt; droneById = drones.stream().</span>
+<span class="fc" id="L109">                collect(Collectors.toMap(Drone::getId, d -&gt; d));</span>
+        // Map serviceId to DroneForServicePoint
+<span class="fc" id="L111">        Map&lt;Integer, DroneForServicePoint&gt; spMapDrone = dfsp.stream()</span>
+<span class="fc" id="L112">                .collect(Collectors.toMap</span>
+<span class="fc" id="L113">                        (DroneForServicePoint::getServicePointId, e -&gt; e));</span>
+
+<span class="fc" id="L115">        List&lt;MedDispatchRec&gt; fixed = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L116">        List&lt;MedDispatchRec&gt; dateOnly = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L117">        List&lt;MedDispatchRec&gt; anytime = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">        for (MedDispatchRec r : recs) {</span>
+<span class="pc bpc" id="L119" title="2 of 4 branches missed.">            if (r.getDate() != null &amp;&amp; r.getTime() != null) fixed.add(r);</span>
+<span class="nc bnc" id="L120" title="All 2 branches missed.">            else if (r.getDate() != null) dateOnly.add(r);</span>
+<span class="nc" id="L121">            else anytime.add(r);</span>
+<span class="fc" id="L122">        }</span>
+<span class="fc" id="L123">        Map&lt;LocalDate, List&lt;MedDispatchRec&gt;&gt; fixedByDate =</span>
+<span class="fc" id="L124">                fixed.stream().collect(Collectors.groupingBy(MedDispatchRec::getDate));</span>
+<span class="fc" id="L125">        Map&lt;LocalDate, List&lt;MedDispatchRec&gt;&gt; dateOnlyByDate =</span>
+<span class="fc" id="L126">                dateOnly.stream().collect(Collectors.groupingBy(MedDispatchRec::getDate));</span>
+
+<span class="fc" id="L128">        List&lt;LocalDate&gt; orderedDays = Stream.concat(</span>
+<span class="fc" id="L129">                        fixedByDate.keySet().stream(),</span>
+<span class="fc" id="L130">                        dateOnlyByDate.keySet().stream())</span>
+<span class="fc" id="L131">                .distinct().sorted().toList();</span>
+
+        // Group the dispatches by date and sorted in time sequence(compare id if same time)
+
+<span class="fc" id="L135">        List&lt;FlightBuilder&gt; activeFlights = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L136">        List&lt;FlightBuilder&gt; finishedFlights = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L138" title="All 2 branches covered.">        for (LocalDate day : orderedDays) {</span>
+<span class="fc" id="L139">            List&lt;MedDispatchRec&gt; today = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L140">            var fx = new ArrayList&lt;&gt;(fixedByDate.getOrDefault(day, List.of()));</span>
+<span class="fc" id="L141">            fx.sort(Comparator.comparing(MedDispatchRec::getTime).thenComparing(MedDispatchRec::getId));</span>
+<span class="fc" id="L142">            today.addAll(fx);</span>
+<span class="fc" id="L143">            today.addAll(dateOnlyByDate.getOrDefault(day, List.of()));</span>
+<span class="fc bfc" id="L144" title="All 2 branches covered.">            for (MedDispatchRec r : today) {</span>
+<span class="fc bfc" id="L145" title="All 2 branches covered.">                if (!DeliveryPlanner.tryAssignOrStartFlight(servicePts, spMapDrone, droneById,</span>
+                        restrictedPolys, BBoxes, r, day, activeFlights, finishedFlights)) {
+<span class="fc" id="L147">                    return DeliveryPlanHelper.emptyDeliveryResponse();</span>
+                }
+<span class="fc" id="L149">            }</span>
+
+<span class="pc bpc" id="L151" title="1 of 2 branches missed.">            for (Iterator&lt;MedDispatchRec&gt; it = anytime.iterator(); it.hasNext(); ) {</span>
+<span class="nc" id="L152">                MedDispatchRec r = it.next();</span>
+<span class="nc" id="L153">                boolean ok = DeliveryPlanner.tryAssignOrStartFlight(servicePts, spMapDrone, droneById,</span>
+                        restrictedPolys, BBoxes, r, day, activeFlights, finishedFlights);
+<span class="nc bnc" id="L155" title="All 2 branches missed.">                if (ok) it.remove();</span>
+<span class="nc" id="L156">            }</span>
+<span class="fc" id="L157">        }</span>
+<span class="pc bpc" id="L158" title="1 of 2 branches missed.">        if(!activeFlights.isEmpty()){</span>
+<span class="fc bfc" id="L159" title="All 2 branches covered.">            for(FlightBuilder fb : activeFlights)</span>
+<span class="fc" id="L160">                DeliveryPlanner.closeFlight(fb, finishedFlights, restrictedPolys, BBoxes);</span>
+        }
+<span class="fc" id="L162">        return DeliveryPlanHelper.buildDeliveryResponse(finishedFlights);</span>
+    }
+
+    @Override
+    public GeoJsonResponse calcDeliveryPathAsGeoJson(List&lt;MedDispatchRec&gt; recs){
+        // Basic record verification
+<span class="nc bnc" id="L168" title="All 2 branches missed.">        if(!DeliveryPlanHelper.isValidDispatchList(recs))</span>
+<span class="nc" id="L169">            return DeliveryPlanHelper.emptyGeoJsonResponse();</span>
+
+        // Fast termination if not Completable by single drone(different date)
+<span class="nc" id="L172">        LocalDate date = recs.get(0).getDate();</span>
+<span class="nc bnc" id="L173" title="All 2 branches missed.">        for (MedDispatchRec rec : recs)</span>
+<span class="nc bnc" id="L174" title="All 2 branches missed.">            if(!rec.getDate().equals(date))</span>
+<span class="nc" id="L175">                return DeliveryPlanHelper.emptyGeoJsonResponse();</span>
+
+<span class="nc" id="L177">        List&lt;Drone&gt; drones = ilpClient.getAllDrones();</span>
+<span class="nc" id="L178">        List&lt;ServicePoint&gt; servicePts = ilpClient.getServicePoints();</span>
+<span class="nc" id="L179">        List&lt;RestrictedArea&gt; areas = ilpClient.getRestrictedAreas();</span>
+<span class="nc" id="L180">        List&lt;DroneForServicePoint&gt; dfsp = ilpClient.getDronesForServicePoints();</span>
+<span class="nc" id="L181">        List&lt;List&lt;Coordinate&gt;&gt; restrictedPolys = DeliveryPlanHelper.extractPolygons(areas);</span>
+<span class="nc" id="L182">        List&lt;BoundBox&gt; BBoxes = DeliveryPlanHelper.extractBBoxes(areas);</span>
+        // Map drone by drone id
+<span class="nc" id="L184">        Map&lt;String, Drone&gt; droneById = drones.stream().</span>
+<span class="nc" id="L185">                collect(Collectors.toMap(Drone::getId, d -&gt; d));</span>
+        // Map serviceId to DroneForServicePoint
+<span class="nc" id="L187">        Map&lt;Integer, DroneForServicePoint&gt; spMapDrone = dfsp.stream()</span>
+<span class="nc" id="L188">                .collect(Collectors.toMap</span>
+<span class="nc" id="L189">                        (DroneForServicePoint::getServicePointId, e -&gt; e));</span>
+
+<span class="nc" id="L191">        List&lt;String&gt; availableDrones = queryAvailableDrones(recs);</span>
+<span class="nc bnc" id="L192" title="All 4 branches missed.">        if(availableDrones == null || availableDrones.isEmpty())</span>
+<span class="nc" id="L193">            return DeliveryPlanHelper.emptyGeoJsonResponse();</span>
+
+<span class="nc bnc" id="L195" title="All 2 branches missed.">        for(String droneId:availableDrones){</span>
+<span class="nc" id="L196">            Drone drone = droneById.get(droneId);</span>
+<span class="nc bnc" id="L197" title="All 2 branches missed.">            if (drone == null) continue;</span>
+<span class="nc" id="L198">            Map&lt;String, Drone&gt; singleDroneMap = Collections.singletonMap(droneId, drone);</span>
+
+<span class="nc" id="L200">            FlightBuilder fb = DeliveryPlanner.openNewFlight(servicePts, singleDroneMap, spMapDrone,</span>
+<span class="nc" id="L201">                    recs.get(0), restrictedPolys, BBoxes, date);</span>
+<span class="nc bnc" id="L202" title="All 2 branches missed.">            if(fb == null) continue;</span>
+
+<span class="nc" id="L204">            List&lt;FlightBuilder&gt; activeFlights = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L205">            List&lt;FlightBuilder&gt; finishedFlights = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L206">            activeFlights.add(fb);</span>
+
+<span class="nc" id="L208">            boolean ok = true;</span>
+<span class="nc bnc" id="L209" title="All 2 branches missed.">            for (int i = 1; i &lt; recs.size(); i++) {</span>
+<span class="nc" id="L210">                MedDispatchRec rec = recs.get(i);</span>
+<span class="nc" id="L211">                boolean merged = DeliveryPlanner.tryMergeFlight(rec, activeFlights, finishedFlights,</span>
+<span class="nc" id="L212">                        singleDroneMap, spMapDrone, restrictedPolys, BBoxes, rec.getDate());</span>
+<span class="nc bnc" id="L213" title="All 2 branches missed.">                if (!merged) {</span>
+<span class="nc" id="L214">                    ok = false;</span>
+<span class="nc" id="L215">                    break;</span>
+                }
+            }
+<span class="nc bnc" id="L218" title="All 2 branches missed.">            if (!ok) continue;</span>
+
+<span class="nc bnc" id="L220" title="All 2 branches missed.">            if (activeFlights.size() != 1) continue;</span>
+
+<span class="nc" id="L222">            DeliveryPlanner.closeFlight(activeFlights.get(0), finishedFlights, restrictedPolys, BBoxes);</span>
+<span class="nc bnc" id="L223" title="All 2 branches missed.">            if (finishedFlights.size() != 1) {</span>
+<span class="nc" id="L224">                continue;</span>
+            }
+<span class="nc" id="L226">            FlightBuilder resultFlight = finishedFlights.get(0);</span>
+<span class="nc bnc" id="L227" title="All 2 branches missed.">            if (resultFlight.getDeliveryCount() != recs.size())</span>
+<span class="nc" id="L228">                continue;</span>
+
+<span class="nc" id="L230">            return DeliveryPlanHelper.buildGeoJsonResponse(resultFlight);</span>
+        }
+<span class="nc" id="L232">        return DeliveryPlanHelper.emptyGeoJsonResponse();</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
