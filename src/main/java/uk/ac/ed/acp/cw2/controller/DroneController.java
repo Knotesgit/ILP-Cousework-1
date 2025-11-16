@@ -36,6 +36,7 @@ public class DroneController {
      */
     @GetMapping("/dronesWithCooling/{state}")
     public List<String> dronesWithCooling(@PathVariable Boolean state) {
+
         return droneService.dronesWithCooling(state);
     }
 
