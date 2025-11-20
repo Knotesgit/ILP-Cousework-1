@@ -131,7 +131,6 @@ public class GeoUtilities {
             // Exit if explored too many node;
             expansions++;
             if (expansions > EXPANSION_CAP) {
-                System.out.println("Expand too much");
                 return List.of();
             }
 
@@ -156,7 +155,6 @@ public class GeoUtilities {
                 open.add(nn);
             }
         }
-        System.out.println("out of open");
         return List.of();
     }
 
