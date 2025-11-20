@@ -4,7 +4,7 @@ import org.springframework.stereotype.Service;
 import uk.ac.ed.acp.cw2.data.*;
 import uk.ac.ed.acp.cw2.data.DroneForServicePoint;
 import uk.ac.ed.acp.cw2.data.response.CalcDeliveryPathResponse;
-import uk.ac.ed.acp.cw2.data.response.GeoJsonResponse;
+import uk.ac.ed.acp.cw2.data.response.GeoJsonResponseCollection;
 import uk.ac.ed.acp.cw2.utility.DeliveryPlanHelper;
 import uk.ac.ed.acp.cw2.utility.DeliveryPlanner;
 import uk.ac.ed.acp.cw2.utility.QueryDroneHelper;
@@ -163,73 +163,7 @@ public class DroneServiceImpl implements DroneService {
     }
 
     @Override
-    public GeoJsonResponse calcDeliveryPathAsGeoJson(List<MedDispatchRec> recs){
-        // Basic record verification
-        if(!DeliveryPlanHelper.isValidDispatchList(recs))
-            return DeliveryPlanHelper.emptyGeoJsonResponse();
-
-        // Fast termination if not Completable by single drone(different date)
-        LocalDate date = recs.get(0).getDate();
-        for (MedDispatchRec rec : recs)
-            if(!rec.getDate().equals(date))
-                return DeliveryPlanHelper.emptyGeoJsonResponse();
-
-        List<Drone> drones = ilpClient.getAllDrones();
-        List<ServicePoint> servicePts = ilpClient.getServicePoints();
-        List<RestrictedArea> areas = ilpClient.getRestrictedAreas();
-        List<DroneForServicePoint> dfsp = ilpClient.getDronesForServicePoints();
-        List<List<Coordinate>> restrictedPolys = DeliveryPlanHelper.extractPolygons(areas);
-        List<BoundBox> BBoxes = DeliveryPlanHelper.extractBBoxes(areas);
-        // Map drone by drone id
-        Map<String, Drone> droneById = drones.stream().
-                collect(Collectors.toMap(Drone::getId, d -> d));
-        // Map serviceId to DroneForServicePoint
-        Map<Integer, DroneForServicePoint> spMapDrone = dfsp.stream()
-                .collect(Collectors.toMap
-                        (DroneForServicePoint::getServicePointId, e -> e));
-
-        List<String> availableDrones = queryAvailableDrones(recs);
-        if(availableDrones == null || availableDrones.isEmpty())
-            return DeliveryPlanHelper.emptyGeoJsonResponse();
-
-        for(String droneId:availableDrones){
-            Drone drone = droneById.get(droneId);
-            if (drone == null) continue;
-            Map<String, Drone> singleDroneMap = Collections.singletonMap(droneId, drone);
-
-            FlightBuilder fb = DeliveryPlanner.openNewFlight(servicePts, singleDroneMap, spMapDrone,
-                    recs.get(0), restrictedPolys, BBoxes, date);
-            if(fb == null) continue;
-
-            List<FlightBuilder> activeFlights = new ArrayList<>();
-            List<FlightBuilder> finishedFlights = new ArrayList<>();
-            activeFlights.add(fb);
-
-            boolean ok = true;
-            for (int i = 1; i < recs.size(); i++) {
-                MedDispatchRec rec = recs.get(i);
-                boolean merged = DeliveryPlanner.tryMergeFlight(rec, activeFlights, finishedFlights,
-                        singleDroneMap, spMapDrone, restrictedPolys, BBoxes, rec.getDate());
-                if (!merged) {
-                    ok = false;
-                    break;
-                }
-            }
-            if (!ok) continue;
-
-            if (activeFlights.size() != 1) continue;
-
-            DeliveryPlanner.closeFlight(activeFlights.get(0), finishedFlights, restrictedPolys, BBoxes);
-            if (finishedFlights.size() != 1) {
-                continue;
-            }
-            FlightBuilder resultFlight = finishedFlights.get(0);
-            if (resultFlight.getDeliveryCount() != recs.size())
-                continue;
-
-            return DeliveryPlanHelper.buildGeoJsonResponse(resultFlight);
-        }
-        return DeliveryPlanHelper.emptyGeoJsonResponse();
+    public GeoJsonResponseCollection calcDeliveryPathAsGeoJson(List<MedDispatchRec> recs) {
+        return DeliveryPlanHelper.buildGeoJsonResponseCollection(calcDeliveryPath(recs));
     }
-
 }

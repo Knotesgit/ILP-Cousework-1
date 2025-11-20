@@ -4,12 +4,8 @@ import uk.ac.ed.acp.cw2.data.*;
 import uk.ac.ed.acp.cw2.data.DroneForServicePoint;
 import uk.ac.ed.acp.cw2.data.response.*;
 
-
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 // Helper utilities used by the delivery planning logic.
@@ -88,48 +84,73 @@ public class DeliveryPlanHelper {
         return response;
     }
 
-    // Create an empty GeoJsonResponse with no drone paths and null droneId
-    public static GeoJsonResponse emptyGeoJsonResponse() {
-        GeoJsonResponse res = new GeoJsonResponse();
-        GeoJsonResponse.Geometry geom = new GeoJsonResponse.Geometry();
-        geom.setCoordinates(new ArrayList<>());
-        res.setGeometry(geom);
-        GeoJsonResponse.Properties props = new GeoJsonResponse.Properties();
-        props.setDroneId(null);
-        res.setProperties(props);
-        return res;
-    }
+    // Build a GeoJSON FeatureCollection from CalcDeliveryPathResponse.
+    public static GeoJsonResponseCollection buildGeoJsonResponseCollection(
+            CalcDeliveryPathResponse resp) {
 
-    public static GeoJsonResponse buildGeoJsonResponse(FlightBuilder fb) {
-        if (fb == null || fb.getSegments() == null || fb.getSegments().isEmpty()) {
-            return emptyGeoJsonResponse();
+        GeoJsonResponseCollection collection = new GeoJsonResponseCollection();
+        List<GeoJsonResponse> features = new ArrayList<>();
+
+        if (resp == null || resp.getDronePaths() == null || resp.getDronePaths().isEmpty()) {
+            collection.setFeatures(List.of());
+            return collection;
         }
 
-        List<List<Double>> coords = new ArrayList<>();
-        for (var seg : fb.getSegments()) {
-            if (seg == null || seg.getFlightPath() == null || seg.getFlightPath().isEmpty()) continue;
-            List<List<Double>> path = toLngLat(seg.getFlightPath());
+        for (CalcDeliveryPathResponse.DronePath dp : resp.getDronePaths()) {
+            if (dp == null || dp.getDeliveries() == null || dp.getDeliveries().isEmpty())
+                continue;
 
-            if (coords.isEmpty()) {
-                coords.addAll(path);
-            } else {
-                // Prevent duplication
-                coords.addAll(path.subList(1, path.size()));
+            List<Coordinate> merged = new ArrayList<>();
+            Coordinate lastPrevCoord = null;
+
+            // Merge all segments from this drone
+            for (CalcDeliveryPathResponse.DeliverySegment seg : dp.getDeliveries()) {
+                if (seg == null || seg.getFlightPath() == null || seg.getFlightPath().isEmpty())
+                    continue;
+
+                List<Coordinate> raw = seg.getFlightPath();
+                List<Coordinate> cleaned;
+
+                // Cross-segment dedupe: remove the first coordinate iff equal to previous segment’s last
+                if (lastPrevCoord != null) {
+                    Coordinate first = raw.get(0);
+                    if (first.getLat() == lastPrevCoord.getLat() &&
+                            first.getLng() == lastPrevCoord.getLng()) {
+                        cleaned = raw.subList(1, raw.size());
+                    } else {
+                        cleaned = raw;
+                    }
+                } else {
+                    cleaned = raw;
+                }
+
+                merged.addAll(cleaned);
+
+                // Store end of this segment as candidate for dedupe
+                lastPrevCoord = raw.get(raw.size() - 1);
             }
-        }
-        if (coords.isEmpty()) {
-            return emptyGeoJsonResponse();
-        }
-        GeoJsonResponse res = new GeoJsonResponse();
-        GeoJsonResponse.Geometry geom = new GeoJsonResponse.Geometry();
-        geom.setCoordinates(coords);
-        res.setGeometry(geom);
-        GeoJsonResponse.Properties props = new GeoJsonResponse.Properties();
-        props.setDroneId(fb.getDroneId());
-        res.setProperties(props);
 
-        return res;
+            // Convert to [[lng, lat]] list
+            List<List<Double>> coords = toLngLat(merged);
+
+            // Build Feature for this drone
+            GeoJsonResponse feature = new GeoJsonResponse();
+
+            GeoJsonResponse.Properties props = new GeoJsonResponse.Properties();
+            props.setDroneId(dp.getDroneId());
+            feature.setProperties(props);
+
+            GeoJsonResponse.Geometry geom = new GeoJsonResponse.Geometry();
+            geom.setCoordinates(coords);
+            feature.setGeometry(geom);
+
+            features.add(feature);
+        }
+
+        collection.setFeatures(features);
+        return collection;
     }
+
 
 
 

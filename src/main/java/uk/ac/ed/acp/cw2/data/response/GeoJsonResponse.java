@@ -6,7 +6,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import java.util.List;
 
-// Response model for /api/v1/calcDeliveryPathAsGeoJson
 // Represents a single GeoJSON Feature
 @Getter
 @Setter
