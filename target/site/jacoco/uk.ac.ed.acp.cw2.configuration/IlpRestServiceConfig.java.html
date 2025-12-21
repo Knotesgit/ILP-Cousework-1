@@ -7,14 +7,14 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @Configuration
 @EnableScheduling
-<span class="fc" id="L10">public class IlpRestServiceConfig {</span>
+<span class="nc" id="L10">public class IlpRestServiceConfig {</span>
     @Bean
     public String ilpEndpoint() {
-<span class="fc" id="L13">        String endpoint = System.getenv(&quot;ILP_ENDPOINT&quot;);</span>
-<span class="pc bpc" id="L14" title="3 of 4 branches missed.">        if (endpoint == null || endpoint.isBlank()) {</span>
-<span class="fc" id="L15">            endpoint = &quot;https://ilp-rest-2025-bvh6e9hschfagrgy.ukwest-01.azurewebsites.net/&quot;;</span>
+<span class="nc" id="L13">        String endpoint = System.getenv(&quot;ILP_ENDPOINT&quot;);</span>
+<span class="nc bnc" id="L14" title="All 4 branches missed.">        if (endpoint == null || endpoint.isBlank()) {</span>
+<span class="nc" id="L15">            endpoint = &quot;https://ilp-rest-2025-bvh6e9hschfagrgy.ukwest-01.azurewebsites.net/&quot;;</span>
         }
-<span class="fc" id="L17">        return endpoint;</span>
+<span class="nc" id="L17">        return endpoint;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

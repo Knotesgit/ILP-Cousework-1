@@ -11,33 +11,33 @@ import java.util.List;
 @Component
 public class IlpClientComponent {
     private final String serviceUrl;
-<span class="fc" id="L14">    private final RestTemplate restTemplate = new RestTemplate();</span>
+<span class="nc" id="L14">    private final RestTemplate restTemplate = new RestTemplate();</span>
 
-<span class="fc" id="L16">    public IlpClientComponent(String ilpEndpoint) {</span>
-<span class="fc" id="L17">        this.serviceUrl = ilpEndpoint;</span>
-<span class="fc" id="L18">    }</span>
+<span class="nc" id="L16">    public IlpClientComponent(String ilpEndpoint) {</span>
+<span class="nc" id="L17">        this.serviceUrl = ilpEndpoint;</span>
+<span class="nc" id="L18">    }</span>
 
     public List&lt;Drone&gt; getAllDrones() {
-<span class="fc" id="L21">        Drone[] drones = restTemplate.getForObject(serviceUrl + &quot;/drones&quot;, Drone[].class);</span>
-<span class="pc bpc" id="L22" title="1 of 2 branches missed.">        return drones == null ? List.of() : Arrays.asList(drones);</span>
+<span class="nc" id="L21">        Drone[] drones = restTemplate.getForObject(serviceUrl + &quot;/drones&quot;, Drone[].class);</span>
+<span class="nc bnc" id="L22" title="All 2 branches missed.">        return drones == null ? List.of() : Arrays.asList(drones);</span>
     }
     public List&lt;DroneForServicePoint&gt; getDronesForServicePoints() {
-<span class="fc" id="L25">        DroneForServicePoint[] arr =</span>
-<span class="fc" id="L26">                restTemplate.getForObject(serviceUrl + &quot;/drones-for-service-points&quot;,</span>
+<span class="nc" id="L25">        DroneForServicePoint[] arr =</span>
+<span class="nc" id="L26">                restTemplate.getForObject(serviceUrl + &quot;/drones-for-service-points&quot;,</span>
                         DroneForServicePoint[].class);
-<span class="pc bpc" id="L28" title="1 of 2 branches missed.">        return arr == null ? List.of() : Arrays.asList(arr);</span>
+<span class="nc bnc" id="L28" title="All 2 branches missed.">        return arr == null ? List.of() : Arrays.asList(arr);</span>
     }
 
     public List&lt;ServicePoint&gt; getServicePoints() {
-<span class="fc" id="L32">        ServicePoint[] arr = restTemplate.getForObject(</span>
+<span class="nc" id="L32">        ServicePoint[] arr = restTemplate.getForObject(</span>
                 serviceUrl + &quot;/service-points&quot;, ServicePoint[].class);
-<span class="pc bpc" id="L34" title="1 of 2 branches missed.">        return arr == null ? List.of() : Arrays.asList(arr);</span>
+<span class="nc bnc" id="L34" title="All 2 branches missed.">        return arr == null ? List.of() : Arrays.asList(arr);</span>
     }
 
     public List&lt;RestrictedArea&gt; getRestrictedAreas() {
-<span class="fc" id="L38">        RestrictedArea[] arr = restTemplate.getForObject(</span>
+<span class="nc" id="L38">        RestrictedArea[] arr = restTemplate.getForObject(</span>
                 serviceUrl + &quot;/restricted-areas&quot;, RestrictedArea[].class);
-<span class="pc bpc" id="L40" title="1 of 2 branches missed.">        return arr == null ? List.of() : Arrays.asList(arr);</span>
+<span class="nc bnc" id="L40" title="All 2 branches missed.">        return arr == null ? List.of() : Arrays.asList(arr);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

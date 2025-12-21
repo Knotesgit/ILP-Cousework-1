@@ -15,89 +15,89 @@ import java.util.*;
     // Helper method to match a drone against a specific attribute and value
     public static boolean matches(Drone d, String attr, String val) {
         try {
-<span class="pc bpc" id="L18" title="4 of 10 branches missed.">            return switch (attr.toLowerCase()) {</span>
-<span class="fc" id="L19">                case &quot;id&quot; -&gt; d.getId().equals(val);</span>
-<span class="fc" id="L20">                case &quot;name&quot; -&gt; d.getName().equalsIgnoreCase(val);</span>
-<span class="fc bfc" id="L21" title="All 2 branches covered.">                case &quot;cooling&quot; -&gt; d.getCapability().isCooling() == Boolean.parseBoolean(val);</span>
-<span class="pc bpc" id="L22" title="1 of 2 branches missed.">                case &quot;heating&quot; -&gt; d.getCapability().isHeating() == Boolean.parseBoolean(val);</span>
-<span class="fc bfc" id="L23" title="All 2 branches covered.">                case &quot;capacity&quot; -&gt; d.getCapability().getCapacity() == Double.parseDouble(val);</span>
+<span class="nc bnc" id="L18" title="All 10 branches missed.">            return switch (attr.toLowerCase()) {</span>
+<span class="nc" id="L19">                case &quot;id&quot; -&gt; d.getId().equals(val);</span>
+<span class="nc" id="L20">                case &quot;name&quot; -&gt; d.getName().equalsIgnoreCase(val);</span>
+<span class="nc bnc" id="L21" title="All 2 branches missed.">                case &quot;cooling&quot; -&gt; d.getCapability().isCooling() == Boolean.parseBoolean(val);</span>
+<span class="nc bnc" id="L22" title="All 2 branches missed.">                case &quot;heating&quot; -&gt; d.getCapability().isHeating() == Boolean.parseBoolean(val);</span>
+<span class="nc bnc" id="L23" title="All 2 branches missed.">                case &quot;capacity&quot; -&gt; d.getCapability().getCapacity() == Double.parseDouble(val);</span>
 <span class="nc bnc" id="L24" title="All 2 branches missed.">                case &quot;maxmoves&quot; -&gt; d.getCapability().getMaxMoves() == Integer.parseInt(val);</span>
 <span class="nc bnc" id="L25" title="All 2 branches missed.">                case &quot;costpermove&quot; -&gt; d.getCapability().getCostPerMove() == Double.parseDouble(val);</span>
 <span class="nc bnc" id="L26" title="All 2 branches missed.">                case &quot;costinitial&quot; -&gt; d.getCapability().getCostInitial() == Double.parseDouble(val);</span>
 <span class="nc bnc" id="L27" title="All 2 branches missed.">                case &quot;costfinal&quot; -&gt; d.getCapability().getCostFinal() == Double.parseDouble(val);</span>
-<span class="fc" id="L28">                default -&gt; false;</span>
+<span class="nc" id="L28">                default -&gt; false;</span>
             };
-<span class="fc" id="L30">        } catch (NumberFormatException e) {</span>
-<span class="fc" id="L31">            return false; // invalid number input</span>
+<span class="nc" id="L30">        } catch (NumberFormatException e) {</span>
+<span class="nc" id="L31">            return false; // invalid number input</span>
         }
     }
 
     // Helper method to match a drone against a list of specific conditions
     public static boolean matchesConditions(Drone d, List&lt;QueryCondition&gt; conditions) {
-<span class="fc bfc" id="L37" title="All 2 branches covered.">        for (QueryCondition c : conditions) {</span>
-<span class="fc" id="L38">            String attr = c.getAttribute();</span>
-<span class="fc" id="L39">            String op = c.getOperator();</span>
-<span class="fc" id="L40">            String val = c.getValue();</span>
+<span class="nc bnc" id="L37" title="All 2 branches missed.">        for (QueryCondition c : conditions) {</span>
+<span class="nc" id="L38">            String attr = c.getAttribute();</span>
+<span class="nc" id="L39">            String op = c.getOperator();</span>
+<span class="nc" id="L40">            String val = c.getValue();</span>
 
-<span class="fc bfc" id="L42" title="All 4 branches covered.">            switch (op) {</span>
+<span class="nc bnc" id="L42" title="All 4 branches missed.">            switch (op) {</span>
                 case &quot;=&quot; -&gt; {
-<span class="fc bfc" id="L44" title="All 2 branches covered.">                    if (!matches(d, attr, val)) return false;</span>
+<span class="nc bnc" id="L44" title="All 2 branches missed.">                    if (!matches(d, attr, val)) return false;</span>
                 }
                 case &quot;!=&quot; -&gt; {
-<span class="fc bfc" id="L47" title="All 2 branches covered.">                    if (matches(d, attr, val)) return false;</span>
+<span class="nc bnc" id="L47" title="All 2 branches missed.">                    if (matches(d, attr, val)) return false;</span>
                 }
                 case &quot;&lt;&quot;, &quot;&gt;&quot; -&gt; {
-<span class="fc bfc" id="L50" title="All 2 branches covered.">                    if (!compareNumeric(d, attr, op, val)) return false;</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">                    if (!compareNumeric(d, attr, op, val)) return false;</span>
                 }
                 default -&gt; {
-<span class="fc" id="L53">                    return false;</span>
+<span class="nc" id="L53">                    return false;</span>
                 }
             }
-<span class="fc" id="L56">        }</span>
-<span class="fc" id="L57">        return true;</span>
+<span class="nc" id="L56">        }</span>
+<span class="nc" id="L57">        return true;</span>
     }
 
     // Helper method that compares numeric attributes using &lt; or &gt; operators
     public static boolean compareNumeric(Drone d, String attr, String op, String val) {
         try {
-<span class="pc bpc" id="L63" title="3 of 6 branches missed.">            double droneVal = switch (attr.toLowerCase()) {</span>
-<span class="fc" id="L64">                case &quot;capacity&quot; -&gt; d.getCapability().getCapacity();</span>
-<span class="fc" id="L65">                case &quot;maxmoves&quot; -&gt; d.getCapability().getMaxMoves();</span>
+<span class="nc bnc" id="L63" title="All 6 branches missed.">            double droneVal = switch (attr.toLowerCase()) {</span>
+<span class="nc" id="L64">                case &quot;capacity&quot; -&gt; d.getCapability().getCapacity();</span>
+<span class="nc" id="L65">                case &quot;maxmoves&quot; -&gt; d.getCapability().getMaxMoves();</span>
 <span class="nc" id="L66">                case &quot;costpermove&quot; -&gt; d.getCapability().getCostPerMove();</span>
 <span class="nc" id="L67">                case &quot;costinitial&quot; -&gt; d.getCapability().getCostInitial();</span>
 <span class="nc" id="L68">                case &quot;costfinal&quot; -&gt; d.getCapability().getCostFinal();</span>
-<span class="fc" id="L69">                default -&gt; Double.NaN;</span>
+<span class="nc" id="L69">                default -&gt; Double.NaN;</span>
             };
-<span class="fc bfc" id="L71" title="All 2 branches covered.">            if (Double.isNaN(droneVal)) return false;</span>
+<span class="nc bnc" id="L71" title="All 2 branches missed.">            if (Double.isNaN(droneVal)) return false;</span>
 
-<span class="fc" id="L73">            double queryVal = Double.parseDouble(val);</span>
-<span class="pc bpc" id="L74" title="1 of 3 branches missed.">            return switch (op) {</span>
-<span class="fc bfc" id="L75" title="All 2 branches covered.">                case &quot;&lt;&quot; -&gt; droneVal &lt; queryVal;</span>
-<span class="fc bfc" id="L76" title="All 2 branches covered.">                case &quot;&gt;&quot; -&gt; droneVal &gt; queryVal;</span>
+<span class="nc" id="L73">            double queryVal = Double.parseDouble(val);</span>
+<span class="nc bnc" id="L74" title="All 3 branches missed.">            return switch (op) {</span>
+<span class="nc bnc" id="L75" title="All 2 branches missed.">                case &quot;&lt;&quot; -&gt; droneVal &lt; queryVal;</span>
+<span class="nc bnc" id="L76" title="All 2 branches missed.">                case &quot;&gt;&quot; -&gt; droneVal &gt; queryVal;</span>
 <span class="nc" id="L77">                default -&gt; false;</span>
             };
-<span class="fc" id="L79">        } catch (NumberFormatException e) {</span>
-<span class="fc" id="L80">            return false;</span>
+<span class="nc" id="L79">        } catch (NumberFormatException e) {</span>
+<span class="nc" id="L80">            return false;</span>
         }
     }
 
     // Builds an index of availability windows: droneId -&gt; list of [from, until] time windows.
     public static Map&lt;String, List&lt;DroneForServicePoint.Availability&gt;&gt;
     buildAvailabilityIndex(List&lt;DroneForServicePoint&gt; dfspList) {
-<span class="fc" id="L87">        Map&lt;String, List&lt;DroneForServicePoint.Availability&gt;&gt; map = new HashMap&lt;&gt;();</span>
-<span class="pc bpc" id="L88" title="1 of 2 branches missed.">        if (dfspList == null) return map;</span>
+<span class="nc" id="L87">        Map&lt;String, List&lt;DroneForServicePoint.Availability&gt;&gt; map = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L88" title="All 2 branches missed.">        if (dfspList == null) return map;</span>
 
-<span class="fc bfc" id="L90" title="All 2 branches covered.">        for (DroneForServicePoint sp : dfspList) {</span>
-<span class="pc bpc" id="L91" title="1 of 2 branches missed.">            if (sp.getDrones() == null) continue;</span>
-<span class="fc bfc" id="L92" title="All 2 branches covered.">            for (DroneForServicePoint.Item it : sp.getDrones()) {</span>
-<span class="fc" id="L93">                List&lt;DroneForServicePoint.Availability&gt; list =</span>
-<span class="fc" id="L94">                        map.computeIfAbsent(it.getId(), k -&gt; new ArrayList&lt;&gt;());</span>
-<span class="pc bpc" id="L95" title="1 of 2 branches missed.">                if (it.getAvailability() != null) {</span>
-<span class="fc" id="L96">                    list.addAll(it.getAvailability());</span>
+<span class="nc bnc" id="L90" title="All 2 branches missed.">        for (DroneForServicePoint sp : dfspList) {</span>
+<span class="nc bnc" id="L91" title="All 2 branches missed.">            if (sp.getDrones() == null) continue;</span>
+<span class="nc bnc" id="L92" title="All 2 branches missed.">            for (DroneForServicePoint.Item it : sp.getDrones()) {</span>
+<span class="nc" id="L93">                List&lt;DroneForServicePoint.Availability&gt; list =</span>
+<span class="nc" id="L94">                        map.computeIfAbsent(it.getId(), k -&gt; new ArrayList&lt;&gt;());</span>
+<span class="nc bnc" id="L95" title="All 2 branches missed.">                if (it.getAvailability() != null) {</span>
+<span class="nc" id="L96">                    list.addAll(it.getAvailability());</span>
                 }
-<span class="fc" id="L98">            }</span>
-<span class="fc" id="L99">        }</span>
-<span class="fc" id="L100">        return map;</span>
+<span class="nc" id="L98">            }</span>
+<span class="nc" id="L99">        }</span>
+<span class="nc" id="L100">        return map;</span>
     }
 
     // Builds an index of servicPoint: droneId -&gt; list of servicePoint it available.
@@ -105,24 +105,24 @@ import java.util.*;
             List&lt;DroneForServicePoint&gt; dfspList,
             List&lt;ServicePoint&gt; servicePoints) {
 
-<span class="fc" id="L108">        Map&lt;String, List&lt;ServicePoint&gt;&gt; map = new HashMap&lt;&gt;();</span>
-<span class="pc bpc" id="L109" title="2 of 4 branches missed.">        if (dfspList == null || servicePoints == null) return map;</span>
+<span class="nc" id="L108">        Map&lt;String, List&lt;ServicePoint&gt;&gt; map = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L109" title="All 4 branches missed.">        if (dfspList == null || servicePoints == null) return map;</span>
 
-<span class="fc" id="L111">        Map&lt;Integer, ServicePoint&gt; spById = new HashMap&lt;&gt;();</span>
-<span class="fc bfc" id="L112" title="All 2 branches covered.">        for (ServicePoint sp : servicePoints) {</span>
-<span class="fc" id="L113">            spById.put(sp.getId(), sp);</span>
-<span class="fc" id="L114">        }</span>
+<span class="nc" id="L111">        Map&lt;Integer, ServicePoint&gt; spById = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L112" title="All 2 branches missed.">        for (ServicePoint sp : servicePoints) {</span>
+<span class="nc" id="L113">            spById.put(sp.getId(), sp);</span>
+<span class="nc" id="L114">        }</span>
 
-<span class="fc bfc" id="L116" title="All 2 branches covered.">        for (DroneForServicePoint spEntry : dfspList) {</span>
-<span class="fc" id="L117">            ServicePoint sp = spById.get(spEntry.getServicePointId());</span>
-<span class="pc bpc" id="L118" title="2 of 4 branches missed.">            if (sp == null || spEntry.getDrones() == null) continue;</span>
+<span class="nc bnc" id="L116" title="All 2 branches missed.">        for (DroneForServicePoint spEntry : dfspList) {</span>
+<span class="nc" id="L117">            ServicePoint sp = spById.get(spEntry.getServicePointId());</span>
+<span class="nc bnc" id="L118" title="All 4 branches missed.">            if (sp == null || spEntry.getDrones() == null) continue;</span>
 
-<span class="fc bfc" id="L120" title="All 2 branches covered.">            for (DroneForServicePoint.Item it : spEntry.getDrones()) {</span>
-<span class="fc" id="L121">                map.computeIfAbsent(it.getId(), k -&gt; new ArrayList&lt;&gt;())</span>
-<span class="fc" id="L122">                        .add(sp);</span>
-<span class="fc" id="L123">            }</span>
-<span class="fc" id="L124">        }</span>
-<span class="fc" id="L125">        return map;</span>
+<span class="nc bnc" id="L120" title="All 2 branches missed.">            for (DroneForServicePoint.Item it : spEntry.getDrones()) {</span>
+<span class="nc" id="L121">                map.computeIfAbsent(it.getId(), k -&gt; new ArrayList&lt;&gt;())</span>
+<span class="nc" id="L122">                        .add(sp);</span>
+<span class="nc" id="L123">            }</span>
+<span class="nc" id="L124">        }</span>
+<span class="nc" id="L125">        return map;</span>
     }
 
     // Checks if a drone can fulfill all dispatches
@@ -133,27 +133,27 @@ import java.util.*;
                                 List&lt;MedDispatchRec&gt; dispatches,
                                 int numOfDeliveries) {
 
-<span class="pc bpc" id="L136" title="1 of 4 branches missed.">        if (drone == null || drone.getCapability() == null) return false;</span>
-<span class="pc bpc" id="L137" title="1 of 4 branches missed.">        if (homePoints == null || homePoints.isEmpty()) return false;</span>
+<span class="nc bnc" id="L136" title="All 4 branches missed.">        if (drone == null || drone.getCapability() == null) return false;</span>
+<span class="nc bnc" id="L137" title="All 4 branches missed.">        if (homePoints == null || homePoints.isEmpty()) return false;</span>
 
-<span class="fc" id="L139">        var cap = drone.getCapability();</span>
-<span class="fc" id="L140">        double totalRequired = 0.0;</span>
-<span class="fc" id="L141">        boolean hasAnyMaxCost = false;</span>
+<span class="nc" id="L139">        var cap = drone.getCapability();</span>
+<span class="nc" id="L140">        double totalRequired = 0.0;</span>
+<span class="nc" id="L141">        boolean hasAnyMaxCost = false;</span>
 
-<span class="fc bfc" id="L143" title="All 2 branches covered.">        for (MedDispatchRec rec : dispatches) {</span>
-<span class="fc" id="L144">            var req = rec.getRequirements();</span>
-<span class="pc bpc" id="L145" title="2 of 4 branches missed.">            if (req == null || req.getCapacity() == null) return false;</span>
-<span class="fc bfc" id="L146" title="All 2 branches covered.">            if (cap.getCapacity() &lt; req.getCapacity()) return false;</span>
-<span class="fc" id="L147">            totalRequired += req.getCapacity();</span>
-<span class="pc bpc" id="L148" title="1 of 4 branches missed.">            if (req.isCooling() &amp;&amp; !cap.isCooling()) return false;</span>
-<span class="pc bpc" id="L149" title="3 of 4 branches missed.">            if (req.isHeating() &amp;&amp; !cap.isHeating()) return false;</span>
-<span class="fc bfc" id="L150" title="All 2 branches covered.">            if (!isAvailableAt(windows, rec.getDate(), rec.getTime())) return false;</span>
-<span class="fc bfc" id="L151" title="All 2 branches covered.">            if (req.getMaxCost() != null)</span>
-<span class="fc" id="L152">                hasAnyMaxCost = true;</span>
-<span class="fc" id="L153">        }</span>
-<span class="pc bpc" id="L154" title="1 of 2 branches missed.">        if (totalRequired &gt; cap.getCapacity()) return false;</span>
-<span class="fc bfc" id="L155" title="All 2 branches covered.">        if (!hasAnyMaxCost) return true;</span>
-<span class="fc" id="L156">        return respectsMaxCost(cap, homePoints, dispatches, numOfDeliveries);</span>
+<span class="nc bnc" id="L143" title="All 2 branches missed.">        for (MedDispatchRec rec : dispatches) {</span>
+<span class="nc" id="L144">            var req = rec.getRequirements();</span>
+<span class="nc bnc" id="L145" title="All 4 branches missed.">            if (req == null || req.getCapacity() == null) return false;</span>
+<span class="nc bnc" id="L146" title="All 2 branches missed.">            if (cap.getCapacity() &lt; req.getCapacity()) return false;</span>
+<span class="nc" id="L147">            totalRequired += req.getCapacity();</span>
+<span class="nc bnc" id="L148" title="All 4 branches missed.">            if (req.isCooling() &amp;&amp; !cap.isCooling()) return false;</span>
+<span class="nc bnc" id="L149" title="All 4 branches missed.">            if (req.isHeating() &amp;&amp; !cap.isHeating()) return false;</span>
+<span class="nc bnc" id="L150" title="All 2 branches missed.">            if (!isAvailableAt(windows, rec.getDate(), rec.getTime())) return false;</span>
+<span class="nc bnc" id="L151" title="All 2 branches missed.">            if (req.getMaxCost() != null)</span>
+<span class="nc" id="L152">                hasAnyMaxCost = true;</span>
+<span class="nc" id="L153">        }</span>
+<span class="nc bnc" id="L154" title="All 2 branches missed.">        if (totalRequired &gt; cap.getCapacity()) return false;</span>
+<span class="nc bnc" id="L155" title="All 2 branches missed.">        if (!hasAnyMaxCost) return true;</span>
+<span class="nc" id="L156">        return respectsMaxCost(cap, homePoints, dispatches, numOfDeliveries);</span>
     }
 
 
@@ -161,32 +161,32 @@ import java.util.*;
     public static boolean isAvailableAt(List&lt;DroneForServicePoint.Availability&gt; windows,
                                         LocalDate date, LocalTime time) {
         // No date and time restriction
-<span class="fc bfc" id="L164" title="All 4 branches covered.">        if (date == null &amp;&amp; time == null) return true;</span>
-<span class="pc bpc" id="L165" title="1 of 4 branches missed.">        if (windows == null || windows.isEmpty())</span>
-<span class="fc" id="L166">            return false;</span>
-<span class="fc bfc" id="L167" title="All 2 branches covered.">        if (date == null)</span>
-<span class="fc" id="L168">            return false;</span>
+<span class="nc bnc" id="L164" title="All 4 branches missed.">        if (date == null &amp;&amp; time == null) return true;</span>
+<span class="nc bnc" id="L165" title="All 4 branches missed.">        if (windows == null || windows.isEmpty())</span>
+<span class="nc" id="L166">            return false;</span>
+<span class="nc bnc" id="L167" title="All 2 branches missed.">        if (date == null)</span>
+<span class="nc" id="L168">            return false;</span>
         // Only date restriction
-<span class="fc bfc" id="L170" title="All 2 branches covered.">        if (time == null) {</span>
-<span class="fc" id="L171">            DayOfWeek dow = date.getDayOfWeek();</span>
-<span class="fc bfc" id="L172" title="All 2 branches covered.">            for (DroneForServicePoint.Availability w : windows) {</span>
-<span class="fc" id="L173">                DayOfWeek wDow = parseDayOfWeek(w.getDayOfWeek());</span>
-<span class="pc bpc" id="L174" title="1 of 4 branches missed.">                if (wDow != null &amp;&amp; wDow == dow) return true;</span>
-<span class="fc" id="L175">            }</span>
-<span class="fc" id="L176">            return false;</span>
+<span class="nc bnc" id="L170" title="All 2 branches missed.">        if (time == null) {</span>
+<span class="nc" id="L171">            DayOfWeek dow = date.getDayOfWeek();</span>
+<span class="nc bnc" id="L172" title="All 2 branches missed.">            for (DroneForServicePoint.Availability w : windows) {</span>
+<span class="nc" id="L173">                DayOfWeek wDow = parseDayOfWeek(w.getDayOfWeek());</span>
+<span class="nc bnc" id="L174" title="All 4 branches missed.">                if (wDow != null &amp;&amp; wDow == dow) return true;</span>
+<span class="nc" id="L175">            }</span>
+<span class="nc" id="L176">            return false;</span>
         }
         // Both day and time exist
-<span class="fc" id="L179">        DayOfWeek dow = date.getDayOfWeek();</span>
-<span class="fc bfc" id="L180" title="All 2 branches covered.">        for (DroneForServicePoint.Availability w : windows) {</span>
-<span class="fc" id="L181">            DayOfWeek wDow = parseDayOfWeek(w.getDayOfWeek());</span>
-<span class="fc bfc" id="L182" title="All 4 branches covered.">            if (wDow == null || wDow != dow) continue;</span>
-<span class="fc" id="L183">            LocalTime from = parseTimeSafe(w.getFrom());</span>
-<span class="fc" id="L184">            LocalTime until = parseTimeSafe(w.getUntil());</span>
-<span class="pc bpc" id="L185" title="1 of 8 branches missed.">            if (from != null &amp;&amp; until != null &amp;&amp; !time.isBefore(from) &amp;&amp; !time.isAfter(until)) {</span>
-<span class="fc" id="L186">                return true;</span>
+<span class="nc" id="L179">        DayOfWeek dow = date.getDayOfWeek();</span>
+<span class="nc bnc" id="L180" title="All 2 branches missed.">        for (DroneForServicePoint.Availability w : windows) {</span>
+<span class="nc" id="L181">            DayOfWeek wDow = parseDayOfWeek(w.getDayOfWeek());</span>
+<span class="nc bnc" id="L182" title="All 4 branches missed.">            if (wDow == null || wDow != dow) continue;</span>
+<span class="nc" id="L183">            LocalTime from = parseTimeSafe(w.getFrom());</span>
+<span class="nc" id="L184">            LocalTime until = parseTimeSafe(w.getUntil());</span>
+<span class="nc bnc" id="L185" title="All 8 branches missed.">            if (from != null &amp;&amp; until != null &amp;&amp; !time.isBefore(from) &amp;&amp; !time.isAfter(until)) {</span>
+<span class="nc" id="L186">                return true;</span>
             }
-<span class="fc" id="L188">        }</span>
-<span class="fc" id="L189">        return false;</span>
+<span class="nc" id="L188">        }</span>
+<span class="nc" id="L189">        return false;</span>
     }
 
     // From a service point entry,
@@ -197,18 +197,18 @@ import java.util.*;
             MedDispatchRec rec,
             LocalDate day
     ) {
-<span class="pc bpc" id="L200" title="3 of 8 branches missed.">        if (spEntry == null || spEntry.getDrones() == null || droneById == null || rec == null)</span>
-<span class="fc" id="L201">            return List.of();</span>
-<span class="fc" id="L202">        List&lt;String&gt; res = new ArrayList&lt;&gt;();</span>
-<span class="fc bfc" id="L203" title="All 2 branches covered.">        for (DroneForServicePoint.Item di : spEntry.getDrones()) {</span>
-<span class="pc bpc" id="L204" title="1 of 2 branches missed.">            if (di == null) continue;</span>
-<span class="fc" id="L205">            Drone d = droneById.get(di.getId());</span>
-<span class="pc bpc" id="L206" title="1 of 2 branches missed.">            if (d == null) continue;</span>
-<span class="fc bfc" id="L207" title="All 2 branches covered.">            if (droneMeetsRec(d, di, rec, day)) {</span>
-<span class="fc" id="L208">                res.add(d.getId());</span>
+<span class="nc bnc" id="L200" title="All 8 branches missed.">        if (spEntry == null || spEntry.getDrones() == null || droneById == null || rec == null)</span>
+<span class="nc" id="L201">            return List.of();</span>
+<span class="nc" id="L202">        List&lt;String&gt; res = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L203" title="All 2 branches missed.">        for (DroneForServicePoint.Item di : spEntry.getDrones()) {</span>
+<span class="nc bnc" id="L204" title="All 2 branches missed.">            if (di == null) continue;</span>
+<span class="nc" id="L205">            Drone d = droneById.get(di.getId());</span>
+<span class="nc bnc" id="L206" title="All 2 branches missed.">            if (d == null) continue;</span>
+<span class="nc bnc" id="L207" title="All 2 branches missed.">            if (droneMeetsRec(d, di, rec, day)) {</span>
+<span class="nc" id="L208">                res.add(d.getId());</span>
             }
-<span class="fc" id="L210">        }</span>
-<span class="fc" id="L211">        return res;</span>
+<span class="nc" id="L210">        }</span>
+<span class="nc" id="L211">        return res;</span>
     }
 
     // Check whether a specific drone (and its availability at a service point) satisfies a dispatch.
@@ -218,20 +218,20 @@ import java.util.*;
             MedDispatchRec rec,
             LocalDate day
     ) {
-<span class="pc bpc" id="L221" title="4 of 8 branches missed.">        if (drone == null || drone.getCapability() == null || rec == null || rec.getRequirements() == null)</span>
+<span class="nc bnc" id="L221" title="All 8 branches missed.">        if (drone == null || drone.getCapability() == null || rec == null || rec.getRequirements() == null)</span>
 <span class="nc" id="L222">            return false;</span>
 
-<span class="fc" id="L224">        var cap = drone.getCapability();</span>
-<span class="fc" id="L225">        var req = rec.getRequirements();</span>
-<span class="pc bpc" id="L226" title="3 of 4 branches missed.">        if (req.isCooling() &amp;&amp; !cap.isCooling()) return false;</span>
-<span class="pc bpc" id="L227" title="3 of 4 branches missed.">        if (req.isHeating() &amp;&amp; !cap.isHeating()) return false;</span>
-<span class="fc bfc" id="L228" title="All 2 branches covered.">        if (req.getCapacity() &gt; cap.getCapacity()) return false;</span>
+<span class="nc" id="L224">        var cap = drone.getCapability();</span>
+<span class="nc" id="L225">        var req = rec.getRequirements();</span>
+<span class="nc bnc" id="L226" title="All 4 branches missed.">        if (req.isCooling() &amp;&amp; !cap.isCooling()) return false;</span>
+<span class="nc bnc" id="L227" title="All 4 branches missed.">        if (req.isHeating() &amp;&amp; !cap.isHeating()) return false;</span>
+<span class="nc bnc" id="L228" title="All 2 branches missed.">        if (req.getCapacity() &gt; cap.getCapacity()) return false;</span>
 
-<span class="fc" id="L230">        LocalTime t = rec.getTime();</span>
+<span class="nc" id="L230">        LocalTime t = rec.getTime();</span>
         List&lt;DroneForServicePoint.Availability&gt; windows =
-<span class="pc bpc" id="L232" title="1 of 2 branches missed.">                (atSP == null) ? null : atSP.getAvailability();</span>
+<span class="nc bnc" id="L232" title="All 2 branches missed.">                (atSP == null) ? null : atSP.getAvailability();</span>
 
-<span class="fc" id="L234">        return QueryDroneHelper.isAvailableAt(windows,day,t);</span>
+<span class="nc" id="L234">        return QueryDroneHelper.isAvailableAt(windows,day,t);</span>
     }
 
     // Helper function : conservative max-cost check
@@ -240,58 +240,58 @@ import java.util.*;
                                            List&lt;MedDispatchRec&gt; dispatches,
                                            int numOfDeliveries) {
 
-<span class="pc bpc" id="L243" title="1 of 2 branches missed.">        if (numOfDeliveries &lt;= 0)</span>
+<span class="nc bnc" id="L243" title="All 2 branches missed.">        if (numOfDeliveries &lt;= 0)</span>
 <span class="nc" id="L244">            return false;</span>
-<span class="fc" id="L245">        double bestMovesUpperBound = Double.POSITIVE_INFINITY;</span>
+<span class="nc" id="L245">        double bestMovesUpperBound = Double.POSITIVE_INFINITY;</span>
 
         // Try each service point as a possible base and keep the cheapest
         // conservative (upper-bound) estimate.
-<span class="fc bfc" id="L249" title="All 2 branches covered.">        for (ServicePoint sp : homePoints) {</span>
-<span class="pc bpc" id="L250" title="2 of 4 branches missed.">            if (sp == null || sp.getLocation() == null)</span>
+<span class="nc bnc" id="L249" title="All 2 branches missed.">        for (ServicePoint sp : homePoints) {</span>
+<span class="nc bnc" id="L250" title="All 4 branches missed.">            if (sp == null || sp.getLocation() == null)</span>
 <span class="nc" id="L251">                continue;</span>
-<span class="fc" id="L252">            Coordinate base = sp.getLocation();</span>
-<span class="fc" id="L253">            double movesForThisBase = 0.0;</span>
+<span class="nc" id="L252">            Coordinate base = sp.getLocation();</span>
+<span class="nc" id="L253">            double movesForThisBase = 0.0;</span>
             // For this base, assume each dispatch is handled by a separate
-<span class="fc bfc" id="L255" title="All 2 branches covered.">            for (MedDispatchRec rec : dispatches) {</span>
-<span class="fc" id="L256">                var req = rec.getRequirements();</span>
-<span class="fc" id="L257">                Coordinate target = rec.getDelivery();</span>
-<span class="pc bpc" id="L258" title="1 of 2 branches missed.">                if (target == null) return false;</span>
-<span class="fc" id="L259">                double dist = GeoUtilities.distanceBetween(base, target);</span>
+<span class="nc bnc" id="L255" title="All 2 branches missed.">            for (MedDispatchRec rec : dispatches) {</span>
+<span class="nc" id="L256">                var req = rec.getRequirements();</span>
+<span class="nc" id="L257">                Coordinate target = rec.getDelivery();</span>
+<span class="nc bnc" id="L258" title="All 2 branches missed.">                if (target == null) return false;</span>
+<span class="nc" id="L259">                double dist = GeoUtilities.distanceBetween(base, target);</span>
                 //   base -&gt; target -&gt; base  (two legs)
-<span class="fc" id="L261">                double roundTripMoves = 2.0 * (dist / STEP);</span>
-<span class="fc" id="L262">                roundTripMoves += 1.0;</span>
-<span class="fc" id="L263">                movesForThisBase += roundTripMoves;</span>
-<span class="fc" id="L264">            }</span>
-<span class="pc bpc" id="L265" title="1 of 2 branches missed.">            if (movesForThisBase &lt; bestMovesUpperBound)</span>
-<span class="fc" id="L266">                bestMovesUpperBound = movesForThisBase;</span>
-<span class="fc" id="L267">        }</span>
-<span class="pc bpc" id="L268" title="1 of 2 branches missed.">        if (bestMovesUpperBound == Double.POSITIVE_INFINITY)</span>
+<span class="nc" id="L261">                double roundTripMoves = 2.0 * (dist / STEP);</span>
+<span class="nc" id="L262">                roundTripMoves += 1.0;</span>
+<span class="nc" id="L263">                movesForThisBase += roundTripMoves;</span>
+<span class="nc" id="L264">            }</span>
+<span class="nc bnc" id="L265" title="All 2 branches missed.">            if (movesForThisBase &lt; bestMovesUpperBound)</span>
+<span class="nc" id="L266">                bestMovesUpperBound = movesForThisBase;</span>
+<span class="nc" id="L267">        }</span>
+<span class="nc bnc" id="L268" title="All 2 branches missed.">        if (bestMovesUpperBound == Double.POSITIVE_INFINITY)</span>
 <span class="nc" id="L269">            return false;</span>
-<span class="fc" id="L270">        double fixed = cap.getCostInitial() + cap.getCostFinal();</span>
-<span class="fc" id="L271">        double moveCount = Math.floor(bestMovesUpperBound);</span>
-<span class="fc" id="L272">        double totalCostApprox = fixed + moveCount * cap.getCostPerMove();</span>
-<span class="fc" id="L273">        double avgCostPerDelivery = totalCostApprox / numOfDeliveries;</span>
-<span class="fc bfc" id="L274" title="All 2 branches covered.">        for (MedDispatchRec rec : dispatches) {</span>
-<span class="fc" id="L275">            var req = rec.getRequirements();</span>
-<span class="pc bpc" id="L276" title="1 of 2 branches missed.">            Double maxCost = (req != null) ? req.getMaxCost() : null;</span>
-<span class="pc bpc" id="L277" title="1 of 4 branches missed.">            if (maxCost != null &amp;&amp; avgCostPerDelivery &gt; maxCost)</span>
-<span class="fc" id="L278">                return false;</span>
-<span class="fc" id="L279">        }</span>
-<span class="fc" id="L280">        return true;</span>
+<span class="nc" id="L270">        double fixed = cap.getCostInitial() + cap.getCostFinal();</span>
+<span class="nc" id="L271">        double moveCount = Math.floor(bestMovesUpperBound);</span>
+<span class="nc" id="L272">        double totalCostApprox = fixed + moveCount * cap.getCostPerMove();</span>
+<span class="nc" id="L273">        double avgCostPerDelivery = totalCostApprox / numOfDeliveries;</span>
+<span class="nc bnc" id="L274" title="All 2 branches missed.">        for (MedDispatchRec rec : dispatches) {</span>
+<span class="nc" id="L275">            var req = rec.getRequirements();</span>
+<span class="nc bnc" id="L276" title="All 2 branches missed.">            Double maxCost = (req != null) ? req.getMaxCost() : null;</span>
+<span class="nc bnc" id="L277" title="All 4 branches missed.">            if (maxCost != null &amp;&amp; avgCostPerDelivery &gt; maxCost)</span>
+<span class="nc" id="L278">                return false;</span>
+<span class="nc" id="L279">        }</span>
+<span class="nc" id="L280">        return true;</span>
     }
 
     // Parse English day-of-week string into DayOfWeek
     private static DayOfWeek parseDayOfWeek(String s) {
-<span class="pc bpc" id="L285" title="1 of 2 branches missed.">        if (s == null) return null;</span>
-<span class="fc" id="L286">        try { return DayOfWeek.valueOf(s.toUpperCase(Locale.ROOT)); }</span>
-<span class="fc" id="L287">        catch (Exception e) { return null; }</span>
+<span class="nc bnc" id="L285" title="All 2 branches missed.">        if (s == null) return null;</span>
+<span class="nc" id="L286">        try { return DayOfWeek.valueOf(s.toUpperCase(Locale.ROOT)); }</span>
+<span class="nc" id="L287">        catch (Exception e) { return null; }</span>
     }
 
     // Parse a time string (HH:mm:ss) into  LocalTime
     private static LocalTime parseTimeSafe(String s) {
-<span class="pc bpc" id="L292" title="1 of 2 branches missed.">        if (s == null) return null;</span>
-<span class="fc" id="L293">        try { return LocalTime.parse(s); }</span>
-<span class="fc" id="L294">        catch (Exception e) { return null; }</span>
+<span class="nc bnc" id="L292" title="All 2 branches missed.">        if (s == null) return null;</span>
+<span class="nc" id="L293">        try { return LocalTime.parse(s); }</span>
+<span class="nc" id="L294">        catch (Exception e) { return null; }</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -17,15 +17,15 @@ import uk.ac.ed.acp.cw2.service.ValidationService;
 @RequestMapping(&quot;/api/v1&quot;)
 public class GeometryController {
 
-<span class="fc" id="L20">    private static final Logger logger = LoggerFactory.getLogger(GeometryController.class);</span>
+<span class="nc" id="L20">    private static final Logger logger = LoggerFactory.getLogger(GeometryController.class);</span>
     private final GeoService geo;
     private final ValidationService validation;
     private final String serviceUrl;
-<span class="fc" id="L24">    public GeometryController(GeoService geo, ValidationService validation, String ilpEndpoint) {</span>
-<span class="fc" id="L25">        this.geo = geo;</span>
-<span class="fc" id="L26">        this.validation = validation;</span>
-<span class="fc" id="L27">        this.serviceUrl = ilpEndpoint;</span>
-<span class="fc" id="L28">    }</span>
+<span class="nc" id="L24">    public GeometryController(GeoService geo, ValidationService validation, String ilpEndpoint) {</span>
+<span class="nc" id="L25">        this.geo = geo;</span>
+<span class="nc" id="L26">        this.validation = validation;</span>
+<span class="nc" id="L27">        this.serviceUrl = ilpEndpoint;</span>
+<span class="nc" id="L28">    }</span>
 
     @GetMapping(&quot;/&quot;)
     public String index() {
@@ -37,7 +37,7 @@ public class GeometryController {
 
     @GetMapping(&quot;/uid&quot;)
     public String uid() {
-<span class="fc" id="L40">        return &quot;s2536347&quot;;</span>
+<span class="nc" id="L40">        return &quot;s2536347&quot;;</span>
     }
 
     /**
@@ -48,13 +48,13 @@ public class GeometryController {
      */
     @PostMapping(&quot;/distanceTo&quot;)
     public ResponseEntity&lt;Double&gt; distanceTo(@RequestBody DistanceRequest req) {
-<span class="pc bpc" id="L51" title="1 of 2 branches missed.">        Coordinate pos1 = (req != null) ? req.getPosition1() : null;</span>
-<span class="pc bpc" id="L52" title="1 of 2 branches missed.">        Coordinate pos2 = (req != null) ? req.getPosition2() : null;</span>
+<span class="nc bnc" id="L51" title="All 2 branches missed.">        Coordinate pos1 = (req != null) ? req.getPosition1() : null;</span>
+<span class="nc bnc" id="L52" title="All 2 branches missed.">        Coordinate pos2 = (req != null) ? req.getPosition2() : null;</span>
         //Check whether the coordinate lies in a valid range.
-<span class="fc bfc" id="L54" title="All 4 branches covered.">        if (!validation.isValidCoordinate(pos1) || !validation.isValidCoordinate(pos2)) {</span>
-<span class="fc" id="L55">            return ResponseEntity.badRequest().build();</span>
+<span class="nc bnc" id="L54" title="All 4 branches missed.">        if (!validation.isValidCoordinate(pos1) || !validation.isValidCoordinate(pos2)) {</span>
+<span class="nc" id="L55">            return ResponseEntity.badRequest().build();</span>
         }
-<span class="fc" id="L57">        return ResponseEntity.ok(geo.distanceBetween(pos1, pos2));</span>
+<span class="nc" id="L57">        return ResponseEntity.ok(geo.distanceBetween(pos1, pos2));</span>
     }
 
     /**
@@ -65,13 +65,13 @@ public class GeometryController {
      */
     @PostMapping(&quot;/isCloseTo&quot;)
     public ResponseEntity&lt;Boolean&gt; isCloseTo(@RequestBody DistanceRequest req) {
-<span class="pc bpc" id="L68" title="1 of 2 branches missed.">        Coordinate pos1 = (req != null) ? req.getPosition1() : null;</span>
-<span class="pc bpc" id="L69" title="1 of 2 branches missed.">        Coordinate pos2 = (req != null) ? req.getPosition2() : null;</span>
-<span class="fc bfc" id="L70" title="All 4 branches covered.">        if (!validation.isValidCoordinate(pos1) || !validation.isValidCoordinate(pos2)) {</span>
-<span class="fc" id="L71">            return ResponseEntity.badRequest().build();</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        Coordinate pos1 = (req != null) ? req.getPosition1() : null;</span>
+<span class="nc bnc" id="L69" title="All 2 branches missed.">        Coordinate pos2 = (req != null) ? req.getPosition2() : null;</span>
+<span class="nc bnc" id="L70" title="All 4 branches missed.">        if (!validation.isValidCoordinate(pos1) || !validation.isValidCoordinate(pos2)) {</span>
+<span class="nc" id="L71">            return ResponseEntity.badRequest().build();</span>
         }
         // prevent floating error
-<span class="fc" id="L74">        return ResponseEntity.ok(geo.isNear(pos1, pos2));</span>
+<span class="nc" id="L74">        return ResponseEntity.ok(geo.isNear(pos1, pos2));</span>
     }
 
     /**
@@ -84,13 +84,13 @@ public class GeometryController {
      */
     @PostMapping(&quot;/nextPosition&quot;)
     public ResponseEntity&lt;Coordinate&gt; nextPosition(@RequestBody NextPositionRequest req) {
-<span class="pc bpc" id="L87" title="1 of 2 branches missed.">        Coordinate start = (req != null) ? req.getStart() : null;</span>
-<span class="pc bpc" id="L88" title="1 of 2 branches missed.">        Double angle = (req != null) ? req.getAngle() : null;</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">        Coordinate start = (req != null) ? req.getStart() : null;</span>
+<span class="nc bnc" id="L88" title="All 2 branches missed.">        Double angle = (req != null) ? req.getAngle() : null;</span>
 
-<span class="fc bfc" id="L90" title="All 4 branches covered.">        if (!validation.isValidCoordinate(start) || !validation.isValidAngle(angle)) {</span>
-<span class="fc" id="L91">            return ResponseEntity.badRequest().build();</span>
+<span class="nc bnc" id="L90" title="All 4 branches missed.">        if (!validation.isValidCoordinate(start) || !validation.isValidAngle(angle)) {</span>
+<span class="nc" id="L91">            return ResponseEntity.badRequest().build();</span>
         }
-<span class="fc" id="L93">        return ResponseEntity.ok(geo.nextPosition(start,angle));</span>
+<span class="nc" id="L93">        return ResponseEntity.ok(geo.nextPosition(start,angle));</span>
     }
 
     /**
@@ -103,12 +103,12 @@ public class GeometryController {
      */
     @PostMapping(&quot;/isInRegion&quot;)
     public  ResponseEntity&lt;Boolean&gt; isInRegion(@RequestBody RegionRequest req) {
-<span class="pc bpc" id="L106" title="1 of 2 branches missed.">        Coordinate pos = (req != null) ? req.getPosition() : null;</span>
-<span class="pc bpc" id="L107" title="1 of 2 branches missed.">        Region region = (req != null) ? req.getRegion() : null;</span>
-<span class="pc bpc" id="L108" title="1 of 4 branches missed.">        if(!validation.isValidCoordinate(pos) || !validation.isValidRegion(region)) {</span>
-<span class="fc" id="L109">            return ResponseEntity.badRequest().build();</span>
+<span class="nc bnc" id="L106" title="All 2 branches missed.">        Coordinate pos = (req != null) ? req.getPosition() : null;</span>
+<span class="nc bnc" id="L107" title="All 2 branches missed.">        Region region = (req != null) ? req.getRegion() : null;</span>
+<span class="nc bnc" id="L108" title="All 4 branches missed.">        if(!validation.isValidCoordinate(pos) || !validation.isValidRegion(region)) {</span>
+<span class="nc" id="L109">            return ResponseEntity.badRequest().build();</span>
         }
-<span class="fc" id="L111">        return  ResponseEntity.ok(geo.isPointInRegion(pos,region.getVertices()));</span>
+<span class="nc" id="L111">        return  ResponseEntity.ok(geo.isPointInRegion(pos,region.getVertices()));</span>
     }
 
 

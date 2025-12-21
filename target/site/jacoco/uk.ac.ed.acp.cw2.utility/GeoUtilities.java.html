@@ -32,13 +32,13 @@ import java.util.*;
         }
 <span class="fc" id="L33">    }</span>
     public static boolean isNear(Coordinate pos1, Coordinate pos2) {
-<span class="fc bfc" id="L35" title="All 2 branches covered.">        return ((distanceBetween(pos1, pos2) + EPSILON) &lt; 0.00015);</span>
+<span class="nc bnc" id="L35" title="All 2 branches missed.">        return ((distanceBetween(pos1, pos2) + EPSILON) &lt; 0.00015);</span>
     }
 
     public static double distanceBetween(Coordinate pos1, Coordinate pos2) {
-<span class="fc" id="L39">        double dx = pos1.getLng() - pos2.getLng();</span>
-<span class="fc" id="L40">        double dy = pos1.getLat() - pos2.getLat();</span>
-<span class="fc" id="L41">        return Math.sqrt(dx * dx + dy * dy);</span>
+<span class="nc" id="L39">        double dx = pos1.getLng() - pos2.getLng();</span>
+<span class="nc" id="L40">        double dy = pos1.getLat() - pos2.getLat();</span>
+<span class="nc" id="L41">        return Math.sqrt(dx * dx + dy * dy);</span>
     }
 
     public static Coordinate nextPosition(Coordinate start, double angle){
@@ -54,44 +54,44 @@ import java.util.*;
     public static boolean onSegment(Coordinate a, Coordinate p, Coordinate q) {
         // cross product to test collinearity
         // 2D cross product (z-component of pq × pa)
-<span class="fc" id="L57">        double cross = (q.getLng()-p.getLng())*(a.getLat()-p.getLat()) - (q.getLat()-p.getLat())*(a.getLng()-p.getLng());</span>
-<span class="fc bfc" id="L58" title="All 2 branches covered.">        if (Math.abs(cross) &gt; EPSILON) return false;</span>
+<span class="nc" id="L57">        double cross = (q.getLng()-p.getLng())*(a.getLat()-p.getLat()) - (q.getLat()-p.getLat())*(a.getLng()-p.getLng());</span>
+<span class="nc bnc" id="L58" title="All 2 branches missed.">        if (Math.abs(cross) &gt; EPSILON) return false;</span>
 
         // bounding box check with tolerance
-<span class="fc bfc" id="L61" title="All 2 branches covered.">        return Math.min(p.getLng(), q.getLng()) - EPSILON &lt;= a.getLng() &amp;&amp;</span>
-<span class="pc bpc" id="L62" title="1 of 2 branches missed.">                a.getLng() &lt;= Math.max(p.getLng(), q.getLng()) + EPSILON &amp;&amp;</span>
-<span class="fc bfc" id="L63" title="All 2 branches covered.">                Math.min(p.getLat(), q.getLat()) - EPSILON &lt;= a.getLat() &amp;&amp;</span>
-<span class="pc bpc" id="L64" title="1 of 2 branches missed.">                a.getLat() &lt;= Math.max(p.getLat(), q.getLat()) + EPSILON;</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">        return Math.min(p.getLng(), q.getLng()) - EPSILON &lt;= a.getLng() &amp;&amp;</span>
+<span class="nc bnc" id="L62" title="All 2 branches missed.">                a.getLng() &lt;= Math.max(p.getLng(), q.getLng()) + EPSILON &amp;&amp;</span>
+<span class="nc bnc" id="L63" title="All 2 branches missed.">                Math.min(p.getLat(), q.getLat()) - EPSILON &lt;= a.getLat() &amp;&amp;</span>
+<span class="nc bnc" id="L64" title="All 2 branches missed.">                a.getLat() &lt;= Math.max(p.getLat(), q.getLat()) + EPSILON;</span>
     }
 
     // Check whether a point is in a region
     public static boolean isPointInRegion(Coordinate p, List&lt;Coordinate&gt; vertices) {
-<span class="fc" id="L69">        int n = vertices.size() - 1; // polygon closed, last == first</span>
+<span class="nc" id="L69">        int n = vertices.size() - 1; // polygon closed, last == first</span>
 
         // check boundary and vertices
-<span class="fc bfc" id="L72" title="All 2 branches covered.">        for (int i = 0; i &lt; n; i++) {</span>
-<span class="fc bfc" id="L73" title="All 2 branches covered.">            if (onSegment(p, vertices.get(i), vertices.get(i+1))) return true;</span>
+<span class="nc bnc" id="L72" title="All 2 branches missed.">        for (int i = 0; i &lt; n; i++) {</span>
+<span class="nc bnc" id="L73" title="All 2 branches missed.">            if (onSegment(p, vertices.get(i), vertices.get(i+1))) return true;</span>
         }
 
-<span class="fc" id="L76">        boolean inside = false;</span>
+<span class="nc" id="L76">        boolean inside = false;</span>
 
-<span class="fc bfc" id="L78" title="All 2 branches covered.">        for (int i = 0, j = n - 1; i &lt; n; j = i++) {</span>
-<span class="fc" id="L79">            Coordinate vi = vertices.get(i), vj = vertices.get(j);</span>
+<span class="nc bnc" id="L78" title="All 2 branches missed.">        for (int i = 0, j = n - 1; i &lt; n; j = i++) {</span>
+<span class="nc" id="L79">            Coordinate vi = vertices.get(i), vj = vertices.get(j);</span>
 
             // ray crosses edge in y-range
-<span class="fc bfc" id="L82" title="All 6 branches covered.">            boolean crossesY = (vi.getLat() &gt; p.getLat()) != (vj.getLat() &gt; p.getLat());</span>
-<span class="fc bfc" id="L83" title="All 2 branches covered.">            if (!crossesY) continue;</span>
+<span class="nc bnc" id="L82" title="All 6 branches missed.">            boolean crossesY = (vi.getLat() &gt; p.getLat()) != (vj.getLat() &gt; p.getLat());</span>
+<span class="nc bnc" id="L83" title="All 2 branches missed.">            if (!crossesY) continue;</span>
 
             // x-coordinate of intersection
-<span class="fc" id="L86">            double xIntersect = (vj.getLng() - vi.getLng()) * (p.getLat() - vi.getLat())</span>
-<span class="fc" id="L87">                    / (vj.getLat() - vi.getLat()) + vi.getLng();</span>
+<span class="nc" id="L86">            double xIntersect = (vj.getLng() - vi.getLng()) * (p.getLat() - vi.getLat())</span>
+<span class="nc" id="L87">                    / (vj.getLat() - vi.getLat()) + vi.getLng();</span>
 
             // count only if intersection is to the right
-<span class="fc bfc" id="L90" title="All 2 branches covered.">            if (p.getLng() &lt; xIntersect) {</span>
-<span class="fc bfc" id="L91" title="All 2 branches covered.">                inside = !inside;</span>
+<span class="nc bnc" id="L90" title="All 2 branches missed.">            if (p.getLng() &lt; xIntersect) {</span>
+<span class="nc bnc" id="L91" title="All 2 branches missed.">                inside = !inside;</span>
             }
         }
-<span class="fc" id="L94">        return inside;</span>
+<span class="nc" id="L94">        return inside;</span>
     }
 
     // A* search on a fixed STEP grid with 16-direction branching and Euclidean heuristic.
@@ -101,83 +101,81 @@ import java.util.*;
         //start = PathFindingHelper.normalize(start);
         //goal  = PathFindingHelper.normalize(goal);
         // Early exit if start or goal lies within any restricted area
-<span class="fc bfc" id="L104" title="All 4 branches covered.">        if (rects != null &amp;&amp; !rects.isEmpty()){</span>
-<span class="fc bfc" id="L105" title="All 2 branches covered.">            for(List&lt;Coordinate&gt; poly: rects){</span>
-<span class="fc bfc" id="L106" title="All 4 branches covered.">                if(isPointInRegion(start, poly) || isPointInRegion(goal, poly))</span>
-<span class="fc" id="L107">                    return List.of();</span>
-<span class="fc" id="L108">            }</span>
+<span class="nc bnc" id="L104" title="All 4 branches missed.">        if (rects != null &amp;&amp; !rects.isEmpty()){</span>
+<span class="nc bnc" id="L105" title="All 2 branches missed.">            for(List&lt;Coordinate&gt; poly: rects){</span>
+<span class="nc bnc" id="L106" title="All 4 branches missed.">                if(isPointInRegion(start, poly) || isPointInRegion(goal, poly))</span>
+<span class="nc" id="L107">                    return List.of();</span>
+<span class="nc" id="L108">            }</span>
         }
         // Compute global search bound
-<span class="fc" id="L111">        BoundBox global = PathFindingHelper.computeGlobalBoundBox(start, goal, rectBoxes);</span>
+<span class="nc" id="L111">        BoundBox global = PathFindingHelper.computeGlobalBoundBox(start, goal, rectBoxes);</span>
 
-<span class="fc" id="L113">        Map&lt;String, Integer&gt; bestG = new HashMap&lt;&gt;();</span>
-<span class="fc" id="L114">        PriorityQueue&lt;Node&gt; open = new PriorityQueue&lt;&gt;(Comparator.comparingInt(Node::getF));</span>
+<span class="nc" id="L113">        Map&lt;String, Integer&gt; bestG = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L114">        PriorityQueue&lt;Node&gt; open = new PriorityQueue&lt;&gt;(Comparator.comparingInt(Node::getF));</span>
         // Seed start node
-<span class="fc" id="L116">        Node s = new Node(start, 0, PathFindingHelper.heuristic(start, goal), null);</span>
-<span class="fc" id="L117">        open.add(s);</span>
-<span class="fc" id="L118">        bestG.put(PathFindingHelper.keyOf(start), 0);</span>
+<span class="nc" id="L116">        Node s = new Node(start, 0, PathFindingHelper.heuristic(start, goal), null);</span>
+<span class="nc" id="L117">        open.add(s);</span>
+<span class="nc" id="L118">        bestG.put(PathFindingHelper.keyOf(start), 0);</span>
 
-<span class="fc" id="L120">        int expansions = 0;</span>
+<span class="nc" id="L120">        int expansions = 0;</span>
         // Main A* loop
-<span class="pc bpc" id="L122" title="1 of 2 branches missed.">        while (!open.isEmpty()) {</span>
-<span class="fc" id="L123">            Node cur = open.poll();</span>
-<span class="fc" id="L124">            String kCur = PathFindingHelper.keyOf(cur.getP());</span>
-<span class="fc" id="L125">            Integer best = bestG.get(kCur);</span>
-<span class="pc bpc" id="L126" title="1 of 4 branches missed.">            if (best != null &amp;&amp; best &lt; cur.getG()) continue;</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">        while (!open.isEmpty()) {</span>
+<span class="nc" id="L123">            Node cur = open.poll();</span>
+<span class="nc" id="L124">            String kCur = PathFindingHelper.keyOf(cur.getP());</span>
+<span class="nc" id="L125">            Integer best = bestG.get(kCur);</span>
+<span class="nc bnc" id="L126" title="All 4 branches missed.">            if (best != null &amp;&amp; best &lt; cur.getG()) continue;</span>
 
-<span class="fc bfc" id="L128" title="All 2 branches covered.">            if (isNear(cur.getP(), goal))</span>
-<span class="fc" id="L129">                return PathFindingHelper.reconstruct(cur);</span>
+<span class="nc bnc" id="L128" title="All 2 branches missed.">            if (isNear(cur.getP(), goal))</span>
+<span class="nc" id="L129">                return PathFindingHelper.reconstruct(cur);</span>
 
             // Exit if explored too many node;
-<span class="fc" id="L132">            expansions++;</span>
-<span class="pc bpc" id="L133" title="1 of 2 branches missed.">            if (expansions &gt; EXPANSION_CAP) {</span>
-<span class="nc" id="L134">                System.out.println(&quot;Expand too much&quot;);</span>
-<span class="nc" id="L135">                return List.of();</span>
+<span class="nc" id="L132">            expansions++;</span>
+<span class="nc bnc" id="L133" title="All 2 branches missed.">            if (expansions &gt; EXPANSION_CAP) {</span>
+<span class="nc" id="L134">                return List.of();</span>
             }
 
-<span class="fc bfc" id="L138" title="All 2 branches covered.">            for (int dir = 0; dir &lt; DX.length; dir++) {</span>
-<span class="fc" id="L139">                Coordinate p0 = cur.getP();</span>
-<span class="fc" id="L140">                Coordinate nxt = new Coordinate(</span>
-<span class="fc" id="L141">                        p0.getLng() + DX[dir],</span>
-<span class="fc" id="L142">                        p0.getLat() + DY[dir]</span>
+<span class="nc bnc" id="L137" title="All 2 branches missed.">            for (int dir = 0; dir &lt; DX.length; dir++) {</span>
+<span class="nc" id="L138">                Coordinate p0 = cur.getP();</span>
+<span class="nc" id="L139">                Coordinate nxt = new Coordinate(</span>
+<span class="nc" id="L140">                        p0.getLng() + DX[dir],</span>
+<span class="nc" id="L141">                        p0.getLat() + DY[dir]</span>
                 );
                 //Coordinate nxt = PathFindingHelper.normalize(rawNext);
-<span class="pc bpc" id="L145" title="1 of 2 branches missed.">                if (!PathFindingHelper.insideBox(nxt, global)) continue;</span>
+<span class="nc bnc" id="L144" title="All 2 branches missed.">                if (!PathFindingHelper.insideBox(nxt, global)) continue;</span>
 
                 // Obstacle check for this step
-<span class="fc bfc" id="L148" title="All 2 branches covered.">                if (PathFindingHelper.stepBlocked(cur.getP(), nxt, rects, rectBoxes)) continue;</span>
-<span class="fc" id="L149">                int ng = cur.getG() + 1;</span>
-<span class="fc" id="L150">                String k = PathFindingHelper.keyOf(nxt);</span>
-<span class="fc" id="L151">                Integer old = bestG.get(k);</span>
-<span class="fc bfc" id="L152" title="All 4 branches covered.">                if (old != null &amp;&amp; old &lt;= ng) continue;</span>
-<span class="fc" id="L153">                int h = PathFindingHelper.heuristic(nxt, goal);</span>
-<span class="fc" id="L154">                Node nn = new Node(nxt, ng, ng + h, cur);</span>
-<span class="fc" id="L155">                bestG.put(k, ng);</span>
-<span class="fc" id="L156">                open.add(nn);</span>
+<span class="nc bnc" id="L147" title="All 2 branches missed.">                if (PathFindingHelper.stepBlocked(cur.getP(), nxt, rects, rectBoxes)) continue;</span>
+<span class="nc" id="L148">                int ng = cur.getG() + 1;</span>
+<span class="nc" id="L149">                String k = PathFindingHelper.keyOf(nxt);</span>
+<span class="nc" id="L150">                Integer old = bestG.get(k);</span>
+<span class="nc bnc" id="L151" title="All 4 branches missed.">                if (old != null &amp;&amp; old &lt;= ng) continue;</span>
+<span class="nc" id="L152">                int h = PathFindingHelper.heuristic(nxt, goal);</span>
+<span class="nc" id="L153">                Node nn = new Node(nxt, ng, ng + h, cur);</span>
+<span class="nc" id="L154">                bestG.put(k, ng);</span>
+<span class="nc" id="L155">                open.add(nn);</span>
             }
-<span class="fc" id="L158">        }</span>
-<span class="nc" id="L159">        System.out.println(&quot;out of open&quot;);</span>
-<span class="nc" id="L160">        return List.of();</span>
+<span class="nc" id="L157">        }</span>
+<span class="nc" id="L158">        return List.of();</span>
     }
 
     // Compute the orientation of the ordered triplet (a, b, c)
     public static int orient(Coordinate a, Coordinate b, Coordinate c) {
-<span class="fc" id="L165">        double cross = (b.getLng() - a.getLng()) * (c.getLat() - a.getLat()) - (b.getLat() - a.getLat()) * (c.getLng() - a.getLng());</span>
-<span class="fc bfc" id="L166" title="All 2 branches covered.">        if (cross &gt; EPSILON) return 1;</span>
-<span class="fc bfc" id="L167" title="All 2 branches covered.">        if (cross &lt; -EPSILON) return -1;</span>
-<span class="fc" id="L168">        return 0;</span>
+<span class="nc" id="L163">        double cross = (b.getLng() - a.getLng()) * (c.getLat() - a.getLat()) - (b.getLat() - a.getLat()) * (c.getLng() - a.getLng());</span>
+<span class="nc bnc" id="L164" title="All 2 branches missed.">        if (cross &gt; EPSILON) return 1;</span>
+<span class="nc bnc" id="L165" title="All 2 branches missed.">        if (cross &lt; -EPSILON) return -1;</span>
+<span class="nc" id="L166">        return 0;</span>
     }
 
     // Segment-segment intersection with collinearity handling.
     public static boolean segmentsIntersect(Coordinate p1, Coordinate p2, Coordinate q1, Coordinate q2) {
-<span class="fc" id="L173">        int o1 = orient(p1, p2, q1), o2 = orient(p1, p2, q2);</span>
-<span class="fc" id="L174">        int o3 = orient(q1, q2, p1), o4 = orient(q1, q2, p2);</span>
-<span class="fc bfc" id="L175" title="All 4 branches covered.">        if (o1 != o2 &amp;&amp; o3 != o4) return true;</span>
-<span class="pc bpc" id="L176" title="3 of 4 branches missed.">        if (o1 == 0 &amp;&amp; onSegment(q1, p1, p2)) return true;</span>
-<span class="pc bpc" id="L177" title="3 of 4 branches missed.">        if (o2 == 0 &amp;&amp; onSegment(q2, p1, p2)) return true;</span>
-<span class="pc bpc" id="L178" title="3 of 4 branches missed.">        if (o3 == 0 &amp;&amp; onSegment(p1, q1, q2)) return true;</span>
-<span class="pc bpc" id="L179" title="1 of 4 branches missed.">        if (o4 == 0 &amp;&amp; onSegment(p2, q1, q2)) return true;</span>
-<span class="fc" id="L180">        return false;</span>
+<span class="nc" id="L171">        int o1 = orient(p1, p2, q1), o2 = orient(p1, p2, q2);</span>
+<span class="nc" id="L172">        int o3 = orient(q1, q2, p1), o4 = orient(q1, q2, p2);</span>
+<span class="nc bnc" id="L173" title="All 4 branches missed.">        if (o1 != o2 &amp;&amp; o3 != o4) return true;</span>
+<span class="nc bnc" id="L174" title="All 4 branches missed.">        if (o1 == 0 &amp;&amp; onSegment(q1, p1, p2)) return true;</span>
+<span class="nc bnc" id="L175" title="All 4 branches missed.">        if (o2 == 0 &amp;&amp; onSegment(q2, p1, p2)) return true;</span>
+<span class="nc bnc" id="L176" title="All 4 branches missed.">        if (o3 == 0 &amp;&amp; onSegment(p1, q1, q2)) return true;</span>
+<span class="nc bnc" id="L177" title="All 4 branches missed.">        if (o4 == 0 &amp;&amp; onSegment(p2, q1, q2)) return true;</span>
+<span class="nc" id="L178">        return false;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
