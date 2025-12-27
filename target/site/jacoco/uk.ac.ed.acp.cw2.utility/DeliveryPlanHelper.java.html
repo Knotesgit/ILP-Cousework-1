@@ -156,28 +156,28 @@ import java.util.Objects;
 
     // Extract all polygon vertex lists from the given restricted areas.
     public static List&lt;List&lt;Coordinate&gt;&gt; extractPolygons(List&lt;RestrictedArea&gt; areas) {
-<span class="nc" id="L159">        List&lt;List&lt;Coordinate&gt;&gt; polygons = new ArrayList&lt;&gt;();</span>
-<span class="nc bnc" id="L160" title="All 2 branches missed.">        if (areas == null) return polygons;</span>
-<span class="nc bnc" id="L161" title="All 2 branches missed.">        for (RestrictedArea area : areas) {</span>
-<span class="nc bnc" id="L162" title="All 2 branches missed.">            if (area == null) continue;</span>
-<span class="nc" id="L163">            List&lt;Coordinate&gt; vertices = area.getVertices();</span>
-<span class="nc bnc" id="L164" title="All 4 branches missed.">            if (vertices != null &amp;&amp; !vertices.isEmpty()) {</span>
+<span class="fc" id="L159">        List&lt;List&lt;Coordinate&gt;&gt; polygons = new ArrayList&lt;&gt;();</span>
+<span class="pc bpc" id="L160" title="1 of 2 branches missed.">        if (areas == null) return polygons;</span>
+<span class="fc bfc" id="L161" title="All 2 branches covered.">        for (RestrictedArea area : areas) {</span>
+<span class="pc bpc" id="L162" title="1 of 2 branches missed.">            if (area == null) continue;</span>
+<span class="fc" id="L163">            List&lt;Coordinate&gt; vertices = area.getVertices();</span>
+<span class="pc bpc" id="L164" title="2 of 4 branches missed.">            if (vertices != null &amp;&amp; !vertices.isEmpty()) {</span>
                 // Add the polygon (list of vertices) to the result
-<span class="nc" id="L166">                polygons.add(new ArrayList&lt;&gt;(vertices));</span>
+<span class="fc" id="L166">                polygons.add(new ArrayList&lt;&gt;(vertices));</span>
             }
-<span class="nc" id="L168">        }</span>
-<span class="nc" id="L169">        return polygons;</span>
+<span class="fc" id="L168">        }</span>
+<span class="fc" id="L169">        return polygons;</span>
     }
 
     // Compute bounding boxes (min/max lng/lat) for each restricted area polygon.
     public static List&lt;BoundBox&gt; extractBBoxes(List&lt;RestrictedArea&gt; areas) {
-<span class="nc" id="L174">        List&lt;BoundBox&gt; boxes = new ArrayList&lt;&gt;();</span>
-<span class="nc bnc" id="L175" title="All 2 branches missed.">        if (areas == null) return boxes;</span>
-<span class="nc bnc" id="L176" title="All 2 branches missed.">        for (RestrictedArea area : areas) {</span>
-<span class="nc" id="L177">            BoundBox BBox = polyBox(area.getVertices());</span>
-<span class="nc" id="L178">            boxes.add(BBox);</span>
-<span class="nc" id="L179">        }</span>
-<span class="nc" id="L180">        return boxes;</span>
+<span class="fc" id="L174">        List&lt;BoundBox&gt; boxes = new ArrayList&lt;&gt;();</span>
+<span class="pc bpc" id="L175" title="1 of 2 branches missed.">        if (areas == null) return boxes;</span>
+<span class="fc bfc" id="L176" title="All 2 branches covered.">        for (RestrictedArea area : areas) {</span>
+<span class="fc" id="L177">            BoundBox BBox = polyBox(area.getVertices());</span>
+<span class="fc" id="L178">            boxes.add(BBox);</span>
+<span class="fc" id="L179">        }</span>
+<span class="fc" id="L180">        return boxes;</span>
     }
 
     // Find the DroneForServicePoint.Item entry for a given drone ID in a service point.
@@ -202,15 +202,15 @@ import java.util.Objects;
 
     // Construct a bound box for a region
     private static BoundBox polyBox(List&lt;Coordinate&gt; rectClosed) {
-<span class="nc" id="L205">        double minLng = Double.POSITIVE_INFINITY, minLat = Double.POSITIVE_INFINITY;</span>
-<span class="nc" id="L206">        double maxLng = Double.NEGATIVE_INFINITY, maxLat = Double.NEGATIVE_INFINITY;</span>
-<span class="nc bnc" id="L207" title="All 2 branches missed.">        for (var c : rectClosed) {</span>
-<span class="nc" id="L208">            minLng = Math.min(minLng, c.getLng());</span>
-<span class="nc" id="L209">            maxLng = Math.max(maxLng, c.getLng());</span>
-<span class="nc" id="L210">            minLat = Math.min(minLat, c.getLat());</span>
-<span class="nc" id="L211">            maxLat = Math.max(maxLat, c.getLat());</span>
-<span class="nc" id="L212">        }</span>
-<span class="nc" id="L213">        return new BoundBox(new Coordinate(maxLng, maxLat), new Coordinate(minLng, minLat));</span>
+<span class="fc" id="L205">        double minLng = Double.POSITIVE_INFINITY, minLat = Double.POSITIVE_INFINITY;</span>
+<span class="fc" id="L206">        double maxLng = Double.NEGATIVE_INFINITY, maxLat = Double.NEGATIVE_INFINITY;</span>
+<span class="fc bfc" id="L207" title="All 2 branches covered.">        for (var c : rectClosed) {</span>
+<span class="fc" id="L208">            minLng = Math.min(minLng, c.getLng());</span>
+<span class="fc" id="L209">            maxLng = Math.max(maxLng, c.getLng());</span>
+<span class="fc" id="L210">            minLat = Math.min(minLat, c.getLat());</span>
+<span class="fc" id="L211">            maxLat = Math.max(maxLat, c.getLat());</span>
+<span class="fc" id="L212">        }</span>
+<span class="fc" id="L213">        return new BoundBox(new Coordinate(maxLng, maxLat), new Coordinate(minLng, minLat));</span>
     }
 
     // Convert Coordinate to List of pairs of Lng lat

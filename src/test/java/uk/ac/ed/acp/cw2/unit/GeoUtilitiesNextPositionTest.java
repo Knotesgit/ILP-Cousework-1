@@ -28,7 +28,7 @@ class GeoUtilitiesNextPositionTest {
 
     @ParameterizedTest(name = "angle={0}")
     @MethodSource("validAngles")
-    @DisplayName("FR-U2: nextPosition returns a point exactly one STEP away (independent oracle)")
+    @DisplayName("FR-U2-1: nextPosition returns a point exactly one STEP away (independent oracle)")
     void nextPosition_hasExactStepLength(double angle) {
         Coordinate start = new Coordinate(-3.1883, 55.9533);
         Coordinate next = GeoUtilities.nextPosition(start, angle);
@@ -47,7 +47,7 @@ class GeoUtilitiesNextPositionTest {
 
     @ParameterizedTest(name = "angle={0}")
     @MethodSource("validAngles")
-    @DisplayName("FR-U2: displacement components match STEP*cos/sin(angle)")
+    @DisplayName("FR-U2-2: displacement components match STEP*cos/sin(angle)")
     void nextPosition_matchesTrigonometricDisplacement(double angle) {
         Coordinate start = new Coordinate(1.2345, -6.7890);
         Coordinate next = GeoUtilities.nextPosition(start, angle);
@@ -65,7 +65,7 @@ class GeoUtilitiesNextPositionTest {
 
     @ParameterizedTest(name = "angle={0}")
     @MethodSource("validAngles")
-    @DisplayName("FR-U2: deterministic output for same inputs")
+    @DisplayName("FR-U2-3: deterministic output for same inputs")
     void nextPosition_isDeterministic(double angle) {
         Coordinate start = new Coordinate(-3.2, 55.9);
 
@@ -78,7 +78,7 @@ class GeoUtilitiesNextPositionTest {
 
     @ParameterizedTest(name = "angle={0}")
     @MethodSource("validAngles")
-    @DisplayName("FR-U2: start coordinate is not mutated")
+    @DisplayName("FR-U2-4: start coordinate is not mutated")
     void nextPosition_doesNotMutateStart(double angle) {
         Coordinate start = new Coordinate(10.0, 20.0);
         double lng0 = start.getLng();
@@ -91,7 +91,7 @@ class GeoUtilitiesNextPositionTest {
     }
 
     @Test
-    @DisplayName("FR-U2 contract boundary: null start throws (documented behaviour)")
+    @DisplayName("FR-U2-5 contract boundary: null start throws (documented behaviour)")
     void nextPosition_nullStart_throws() {
         assertThrows(NullPointerException.class, () -> GeoUtilities.nextPosition(null, 0.0));
     }

@@ -1,1 +1,9 @@
+uk\ac\ed\acp\cw2\system\DroneServiceCalcDeliveryPathRestrictedAreaTest.class
+uk\ac\ed\acp\cw2\unit\GeoUtilitiesDistanceBetweenTest.class
+uk\ac\ed\acp\cw2\system\DroneServiceImplDroneSelectionTest.class
+uk\ac\ed\acp\cw2\system\DroneServiceCalcDeliveryPathPerformanceTest.class
+uk\ac\ed\acp\cw2\unit\PathFindingHelperStepBlockedTest.class
+uk\ac\ed\acp\cw2\unit\GeoUtilitiesOnSegmentTest.class
+uk\ac\ed\acp\cw2\unit\GeoUtilitiesIsPointInRegionTest.class
+uk\ac\ed\acp\cw2\integration\DroneServiceImplBackendQueryCountTest.class
 uk\ac\ed\acp\cw2\unit\GeoUtilitiesNextPositionTest.class
