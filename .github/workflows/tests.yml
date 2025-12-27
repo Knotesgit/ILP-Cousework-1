@@ -18,8 +18,6 @@ jobs:
           java-version: "21"
           cache: maven
 
-      - name: Ensure mvnw is executable
-        run: chmod +x mvnw
-
       - name: Run tests
-        run: ./mvnw -B test
+        run: mvn -B test
+
