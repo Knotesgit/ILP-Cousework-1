@@ -19,7 +19,7 @@ class DroneServiceImplBackendQueryCountTest {
     @Test
     @DisplayName("FR-I1: calcDeliveryPath queries ILP backend exactly once per request")
     void calcDeliveryPath_queriesBackendExactlyOnce() {
-        // Arrange: mock backend client
+        // mock backend client
         IlpClientComponent ilp = Mockito.mock(IlpClientComponent.class);
 
         // Minimal stubs: return empty lists is fine (we're testing call count, not correctness)
@@ -43,14 +43,13 @@ class DroneServiceImplBackendQueryCountTest {
         rec.setDelivery(new Coordinate(-3.1883, 55.9533));
         // date/time can both be null (valid), so it becomes "anytime" and planning returns empty response.
 
-        // Act
         CalcDeliveryPathResponse resp = sut.calcDeliveryPath(List.of(rec));
 
-        // Assert: basic sanity (not the focus, but prevents totally broken flow)
+        // Sanity: response is non-null.
         assertNotNull(resp);
         assertNotNull(resp.getDronePaths());
 
-        // Assert: FR-I1 call-count contract
+        // FR-I1: backend endpoints queried exactly once.
         verify(ilp, times(1)).getAllDrones();
         verify(ilp, times(1)).getServicePoints();
         verify(ilp, times(1)).getRestrictedAreas();

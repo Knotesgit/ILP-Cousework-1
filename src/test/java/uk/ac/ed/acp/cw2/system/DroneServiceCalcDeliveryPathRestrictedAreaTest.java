@@ -68,7 +68,7 @@ class DroneServiceCalcDeliveryPathRestrictedAreaTest {
         assertNotNull(path);
 
         // Empty path is allowed only when no valid route exists (or start/goal invalid).
-        // For "expected path exists" tests, we will assertNotEmpty elsewhere.
+        // For cases where a path is required, assert a non-empty plan in the calling test.
         if (path.size() < 2) return;
 
         for (int i = 0; i < path.size() - 1; i++) {
@@ -157,7 +157,7 @@ class DroneServiceCalcDeliveryPathRestrictedAreaTest {
     @DisplayName("FR-S2-3: Direct corridor is blocked by a restricted area; " +
             "returned path must detour without crossing")
     void s2_3_endpointsOutside_butBarrierForcesDetour_noCrossing() {
-        // Arrange: rectangle blocks the straight-line corridor between start and goal
+        // Rectangle blocks the straight-line corridor between start and goal
         // Width/height >= STEP (as per constraint).
         RestrictedArea area = ra(4, closedRect(-STEP, -STEP, STEP, STEP));
         List<List<Coordinate>> polys = DeliveryPlanHelper.extractPolygons(List.of(area));
@@ -166,10 +166,10 @@ class DroneServiceCalcDeliveryPathRestrictedAreaTest {
         Coordinate start = c(-6 * STEP, 0);
         Coordinate goal  = c( 6 * STEP, 0);
 
-        // Act
+
         List<Coordinate> path = GeoUtilities.pathBetween(start, goal, polys, boxes);
 
-        // Assert: path should exist (detour), and must not violate restricted areas segment-wise
+        // Expect a non-empty plan; each segment must satisfy the restricted-area oracle.
         assertNotNull(path);
         assertFalse(path.isEmpty(), "Expected a detour path to exist around the restricted area");
         assertNoRestrictedAreaViolation(path, polys);
@@ -178,7 +178,7 @@ class DroneServiceCalcDeliveryPathRestrictedAreaTest {
     @Test
     @DisplayName("FR-S2-4: Goal on restricted boundary is treated as inside => path is invalid (empty)")
     void s2_4_goalOnBoundary_treatedAsInside_pathInvalid() {
-        // Arrange: rectangle with bottom edge y=0; goal lies on this boundary edge
+        // Rectangle bottom edge y=0; goal lies on boundary edge
         RestrictedArea area = ra(5, closedRect(0, 0, 2 * STEP, 2 * STEP));
         List<List<Coordinate>> polys = DeliveryPlanHelper.extractPolygons(List.of(area));
         List<BoundBox> boxes = DeliveryPlanHelper.extractBBoxes(List.of(area));
@@ -186,10 +186,8 @@ class DroneServiceCalcDeliveryPathRestrictedAreaTest {
         Coordinate start = c(-2 * STEP, 0);
         Coordinate goal  = c(STEP, 0); // on bottom edge
 
-        // Act
         List<Coordinate> path = GeoUtilities.pathBetween(start, goal, polys, boxes);
 
-        // Assert
         assertNotNull(path);
         assertTrue(path.isEmpty(), "Expected empty path when goal lies on restricted boundary (boundary treated as blocked)");
     }
@@ -197,7 +195,7 @@ class DroneServiceCalcDeliveryPathRestrictedAreaTest {
     @Test
     @DisplayName("FR-S2-5: Goal on restricted vertex is treated as inside => path is invalid (empty)")
     void s2_5_goalOnVertex_treatedAsInside_pathInvalid() {
-        // Arrange: goal lies exactly on a vertex (0,0)
+        // Goal lies exactly on vertex (0,0)
         RestrictedArea area = ra(6, closedRect(0, 0, 2 * STEP, 2 * STEP));
         List<List<Coordinate>> polys = DeliveryPlanHelper.extractPolygons(List.of(area));
         List<BoundBox> boxes = DeliveryPlanHelper.extractBBoxes(List.of(area));
@@ -205,10 +203,10 @@ class DroneServiceCalcDeliveryPathRestrictedAreaTest {
         Coordinate start = c(-2 * STEP, 0);
         Coordinate goal  = c(0, 0); // vertex
 
-        // Act
+
         List<Coordinate> path = GeoUtilities.pathBetween(start, goal, polys, boxes);
 
-        // Assert
+
         assertNotNull(path);
         assertTrue(path.isEmpty(), "Expected empty path when goal lies on restricted vertex (boundary treated as blocked)");
     }
@@ -216,14 +214,14 @@ class DroneServiceCalcDeliveryPathRestrictedAreaTest {
     @Test
     @DisplayName("FR-S2-6: Path near boundary but strictly outside must be accepted (no false positives)")
     void s2_6_nearBoundaryOutside_pathAccepted_noViolation() {
-        // Arrange: rectangle with bottom edge y=0; goal is slightly below it (outside)
+        // Rectangle with bottom edge y=0; goal is slightly below it (outside)
         RestrictedArea area = ra(7, closedRect(0, 0, 2 * STEP, 2 * STEP));
         List<List<Coordinate>> polys = DeliveryPlanHelper.extractPolygons(List.of(area));
         List<BoundBox> boxes = DeliveryPlanHelper.extractBBoxes(List.of(area)); Coordinate start = c(-2 * STEP, -NEAR);
         Coordinate goal = c(STEP, -NEAR); // very close to boundary but outside
-        // Act
+
         List<Coordinate> path = GeoUtilities.pathBetween(start, goal, polys, boxes);
-        // Assert
+
         assertNotNull(path);
         assertFalse(path.isEmpty(), "Expected a valid path near (but outside) the restricted boundary");
         assertNoRestrictedAreaViolation(path, polys);
@@ -231,7 +229,7 @@ class DroneServiceCalcDeliveryPathRestrictedAreaTest {
     @Test
     @DisplayName("FR-S2-7 : Path navigates between multiple restricted areas without intersecting any")
     void s2_7_multipleAreas_corridorNavigation_noViolation() {
-        // Arrange: two rectangles create a corridor around x=0 that is >= STEP wide
+        // Two rectangles create a corridor around x=0 that is >= STEP wide
         // Left block: x in [-2STEP, -STEP], right block: x in [STEP, 2STEP]
         RestrictedArea left  = ra(9,  closedRect(-2 * STEP, -STEP, -STEP, STEP));
         RestrictedArea right = ra(10, closedRect( STEP, -STEP,  2 * STEP, STEP));
@@ -243,10 +241,8 @@ class DroneServiceCalcDeliveryPathRestrictedAreaTest {
         Coordinate start = c(-3*STEP, -3 * STEP);
         Coordinate goal  = c(3*STEP,  3 * STEP);
 
-        // Act
         List<Coordinate> path = GeoUtilities.pathBetween(start, goal, polys, boxes);
 
-        // Assert
         assertNotNull(path);
         assertFalse(path.isEmpty(), "Expected a valid path through the corridor between restricted areas");
         assertNoRestrictedAreaViolation(path, polys);
